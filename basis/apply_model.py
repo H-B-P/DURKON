@@ -85,20 +85,17 @@ def round_to_sf(x, sf=5):
 def roundify_dict(dyct, sf=5):
  opdyct=dyct.copy()
  for k in opdyct:
-  if k=="segs":
-   for seg in opdyct[k]:
-    seg[1]=round_to_sf(seg[1], sf)
-  elif k=="uniques":
+  if k=="uniques":
    for unique in opdyct[k]:
-    opdyct[k][unique] = round_to_sf(opdyct[k][unique], sf)
+    opdyct[k][unique] = round(opdyct[k][unique], sf)#round_to_sf(opdyct[k][unique], sf)
   else:
-   opdyct[k]=round_to_sf(opdyct[k], sf)
+   opdyct[k]=round(opdyct[k], sf)
  return opdyct
 
 def roundify_ptlist(ptlyst, sf=5):
  oplyst = copy.deepcopy(ptlyst)
  for i in range(len(oplyst)):
-  oplyst[i][1] = round_to_sf(oplyst[i][1],sf)
+  oplyst[i][1] = round(oplyst[i][1],sf)
  return oplyst
 
 def explain(model, sf=5):
