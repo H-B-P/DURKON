@@ -68,14 +68,17 @@ for col in contCols:
 
 #==Actually model!===
 
-model = apply_model.prep_starting_model(trainDf, contCols, segPoints, catCols, uniques, "quality")
-model = actual_modelling.construct_model(trainDf, "quality", 100, 0.01, model, {"contStraight":0.001, "contGroup":0.001})
-model = apply_model.de_feat(model)
-model = actual_modelling.construct_model(trainDf, "quality", 100, 0.01, model)
+models = [apply_model.prep_starting_model(trainDf, contCols, segPoints, catCols, uniques, "quality",1,0.6)]#,apply_model.prep_starting_model(trainDf, contCols, segPoints, catCols, uniques, "quality",1,0.4)]
+#models = actual_modelling.construct_mresp_model(trainDf, "quality", 100, 0.01, models, {"contStraight":0.0005, "contGroup":0.0005})
+#for i in range(len(models)):
+# models[i] = apply_model.de_feat(models[i])
+models = actual_modelling.construct_mresp_model(trainDf, "quality", 150, 0.01, models)
 
 #==Predict==
 
-testDf["PREDICTED"]=apply_model.predict(testDf, model)
+testDf["PREDICTED"] = 0
+for model in models:
+ testDf["PREDICTED"] += apply_model.predict(testDf, model)
 
 print(testDf[["quality","PREDICTED"]])
 

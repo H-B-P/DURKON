@@ -31,3 +31,6 @@ def get_ratios(nseg):
  for i in range(1,nseg):
   ratios.append(float(i)/float(nseg-i))
  return ratios
+
+if __name__ == "__main__":
+ pass
