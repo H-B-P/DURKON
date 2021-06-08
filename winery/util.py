@@ -17,7 +17,7 @@ def get_gradient(x, y):
  
  return numerator/denominator
 
-def target_input_with_output(func, desiredOutput, startingUB, startingLB, iters=10): #this assumes monotonicity
+def target_input_with_output(func, desiredOutput, startingUB, startingLB, iters=30): #this assumes monotonicity
  ub=startingUB
  lb=startingLB
  for i in range(iters):
@@ -36,4 +36,4 @@ if __name__ == "__main__":
  
  def sq(a):
   return a*a
- print(target_input_with_output(sq, 9, 0, 100, 20))
+ print(target_input_with_output(sq, 9, 0, 100))

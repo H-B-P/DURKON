@@ -7,7 +7,7 @@ import analytics
 import util
 import apply_model
 
-SEGS_PER_CONT=3
+PTS_PER_CONT=3
 
 #==Load in==
 
@@ -48,23 +48,11 @@ if True:
 
 #Segmentation
 
-print(trainDf)
-print(trainDf["fixed acidity"])
-
 segPoints={}
 
 for col in contCols:
  print(col)
- 
- ratioList = seg.get_ratios(SEGS_PER_CONT)
- segPointList = []
- for ratio in ratioList:
-  segpt = seg.get_segpt(trainDf, col, ratio)
-  roundedSegpt = util.round_to_sf(segpt, 3)
-  if roundedSegpt not in segPointList and (roundedSegpt>min(df[col])) and (roundedSegpt<max(df[col])):
-   segPointList.append(roundedSegpt)
- segPointList.sort()
- segPoints[col]=[util.round_to_sf(min(trainDf[col]),3)]+segPointList+[util.round_to_sf(max(trainDf[col]),3)]
+ segPoints[col]=seg.default_seg(trainDf, col, PTS_PER_CONT, 0.01)
 
 #==Actually model!===
 
