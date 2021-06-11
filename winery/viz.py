@@ -53,15 +53,43 @@ def get_cat_pdp_prevalences(df, col, threshold=0.05, weightCol=None):
 
 
 
-def draw_cont_pdp(X, Y, targetSpan=0, name="graph"):
+def draw_cont_pdp(pts, targetSpan=0, name="graph"):
+ X = [pt[0] for pt in pts]
+ Y = [pt[1] for pt in pts]
  layout = {
   "yaxis": {
     "range": [min(min(Y), 1-targetSpan), max(max(Y), 1+targetSpan)]
   }
  }
  
- fig = go.Figure(
-    data=go.Data([X,Y]), layout=layout
-)
+ fig = go.Figure(data=go.Scatter(x=X, y=Y), layout=layout)
  
- plotly.offline.plot(fig, filename=name+'.html')
+ plotly.offline.plot(fig, filename='graphs/'+name+'.html')
+
+def draw_cat_pdp(dyct, targetSpan=0, name="graph"):
+ 
+ X=[]
+ Y=[]
+ for thing in dyct["uniques"]:
+  X.append(thing)
+  Y.append(dyct["uniques"][thing])
+ X.append("OTHER")
+ Y.append(dyct["OTHER"])
+ 
+ print(X,Y)
+ 
+ layout = {
+  "yaxis": {
+    "range": [0, max(max(Y), 1+targetSpan)]
+  }
+ }
+ 
+ fig = go.Figure(data=go.Bar(x=X, y=Y), layout=layout)
+ 
+ plotly.offline.plot(fig, filename='graphs/'+name+'.html')
+
+if __name__=="__main__":
+ #exampleCont = [[1,1.4],[2,1.6],[3,0.4]]
+ #draw_cont_pdp(exampleCont)
+ exampleCat = {"uniques":{"wstfgl":1.05, "florpalorp":0.92, "turlingdrome":0.99}, "OTHER":1.04}
+ draw_cat_pdp(exampleCat)

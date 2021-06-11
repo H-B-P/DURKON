@@ -6,8 +6,9 @@ import actual_modelling
 import analytics
 import util
 import apply_model
+import viz
 
-PTS_PER_CONT=3
+PTS_PER_CONT=5
 
 #==Load in==
 
@@ -56,11 +57,17 @@ for col in contCols:
 
 #==Actually model!===
 
-models = [apply_model.prep_starting_model(trainDf, contCols, segPoints, catCols, uniques, "quality",1,0.6)]#,apply_model.prep_starting_model(trainDf, contCols, segPoints, catCols, uniques, "quality",1,0.4)]
+models = [apply_model.prep_starting_model(trainDf, contCols, segPoints, catCols, uniques, "quality",1,1)]#,apply_model.prep_starting_model(trainDf, contCols, segPoints, catCols, uniques, "quality",1,0.4)]
 #models = actual_modelling.construct_mresp_model(trainDf, "quality", 100, 0.01, models, {"contStraight":0.0005, "contGroup":0.0005})
 #for i in range(len(models)):
 # models[i] = apply_model.de_feat(models[i])
 models = actual_modelling.construct_mresp_model(trainDf, "quality", 150, 0.01, models)
+
+#==Visualize model==
+
+for model in models:
+ for col in model["conts"]:
+  viz.draw_cont_pdp(model["conts"][col], 0.2, col)
 
 #==Predict==
 
