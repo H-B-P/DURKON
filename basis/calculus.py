@@ -17,4 +17,4 @@ def Gamma_grad(pred,act):
  return (pred-act)/(pred*pred)
 
 def Gamma_hess(pred,act):
- return (2*act-pred)/(pred*pred*pred)
+ return (act*2-pred)/(pred*pred*pred)
