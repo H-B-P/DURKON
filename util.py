@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import math
+
 def round_to_sf(x, sf=5):
  if x==0:
   return 0
@@ -15,3 +16,5 @@ def get_gradient(x, y):
  denominator=sum((x-aveX)*(x-aveX))
  
  return numerator/denominator
+
+
