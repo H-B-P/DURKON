@@ -29,7 +29,7 @@ def train_gamma_models(df, resp, nrounds, lrs, models, pens=None, weightCol=None
  models = actual_modelling.train_models([df], resp, nrounds, lrs, models, weightCol, staticFeats, lras=calculus.addsmoothing_LRAs, lossgrads=[[calculus.Gamma_grad]], links=[calculus.Add_mlink], linkgrads=[[calculus.Add_mlink_grad]*len(models)], pens=pens, prints=prints)
  return models
 
-def interxhunt_gamma_models(df, resp, cats, conts, models, silent=False, weightCol=None):
+def interxhunt_gamma_models(df, resp, cats, conts, models, silent=False, weightCol=None, filename="suggestions"):
  
  trialModelTemplate = []
  
@@ -87,7 +87,7 @@ def interxhunt_gamma_models(df, resp, cats, conts, models, silent=False, weightC
  for m in range(len(models)):
   sugDf = pd.DataFrame({"Interaction":sugFeats[m], "Type":sugTypes[m], "Importance":sugImps[m]})
   sugDf = sugDf.sort_values(['Importance'], ascending=False).reset_index()
-  sugDf.to_csv("suggestions_"+ALPHABET[m]+".csv")
+  sugDf.to_csv(filename+"_"+ALPHABET[m]+".csv")
   
 
 def gnormalize_gamma_models(models, df, resp, cats, conts, startingErrorPercent=20, catMinPrev=0.01, contTargetPts=5, edge=0.01, weightCol=None):
@@ -104,7 +104,7 @@ def train_gnormal_models(dfs, resp, nrounds, lrs, models, pens=None, weightCol=N
  
  return models
 
-def interxhunt_gnormal_models(dfs, resp, cats, conts, models, silent=False, weightCol=None):
+def interxhunt_gnormal_models(dfs, resp, cats, conts, models, silent=False, weightCol=None, filename="suggestions"):
  
  if type(dfs)!=list:
   dfs=[dfs]
@@ -176,7 +176,7 @@ def interxhunt_gnormal_models(dfs, resp, cats, conts, models, silent=False, weig
  for m in range(len(models)-1):
   sugDf = pd.DataFrame({"Interaction":sugFeats[m], "Type":sugTypes[m], "Importance":sugImps[m]})
   sugDf = sugDf.sort_values(['Importance'], ascending=False).reset_index()
-  sugDf.to_csv("suggestions_"+ALPHABET[m]+".csv")
+  sugDf.to_csv(filename+"_"+ALPHABET[m]+".csv")
 
 def predict_from_gnormal(df, model):
  return misc.predict_models(df, model, calculus.Add_mlink_allbutlast)
@@ -194,7 +194,7 @@ def train_additive_model(df, resp, nrounds, lr, model, pen=0, weightCol=None, st
  model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, pen=pen, specificPens={}, lossgrad=calculus.Gauss_grad, prints=prints)
  return model
 
-def interxhunt_additive_model(df, resp, cats, conts, model, silent=False, weightCol=None):
+def interxhunt_additive_model(df, resp, cats, conts, model, silent=False, weightCol=None, filename="suggestions"):
  
  df["PredComb"]=misc.predict(df,model)
  
@@ -243,7 +243,7 @@ def interxhunt_additive_model(df, resp, cats, conts, model, silent=False, weight
  
  sugDf = pd.DataFrame({"Interaction":sugFeats, "Type":sugTypes, "Importance":sugImps})
  sugDf = sugDf.sort_values(['Importance'], ascending=False).reset_index()
- sugDf.to_csv("suggestions.csv")
+ sugDf.to_csv(filename+".csv")
 
 
 def prep_classifier_model(df, resp, cats, conts, catMinPrev=0.01, contTargetPts=5, edge=0.01, weightCol=None):
@@ -256,7 +256,7 @@ def train_classifier_model(df, resp, nrounds, lr, model, pen=0, weightCol=None, 
  model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, pen=pen, specificPens={}, lossgrad=calculus.Logistic_grad, link = calculus.Logit_link, linkgrad = calculus.Logit_link_grad, prints=prints)
  return model
 
-def interxhunt_classifier_model(df, resp, cats, conts, model, silent=False, weightCol=None):
+def interxhunt_classifier_model(df, resp, cats, conts, model, silent=False, weightCol=None, filename="suggestions"):
  df["PredComb"]=misc.predict(df,model)
  
  sugImps=[]
@@ -304,7 +304,7 @@ def interxhunt_classifier_model(df, resp, cats, conts, model, silent=False, weig
  
  sugDf = pd.DataFrame({"Interaction":sugFeats, "Type":sugTypes, "Importance":sugImps})
  sugDf = sugDf.sort_values(['Importance'], ascending=False).reset_index()
- sugDf.to_csv("suggestions.csv")
+ sugDf.to_csv(filename+".csv")
 
 
 
@@ -322,7 +322,7 @@ def train_adjustment_model(df, resp, startingPoint, nrounds, lr, model, pen=0, w
  model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats=[startingPoint]+staticFeats, pen=pen, specificPens={}, lossgrad=calculus.Gamma_grad, prints=prints)
  return model
 
-def interxhunt_adjustment_model(df, resp, cats, conts, model, silent=False, weightCol=None):
+def interxhunt_adjustment_model(df, resp, cats, conts, model, silent=False, weightCol=None, filename="suggestions"):
  df["PredComb"]=misc.predict(df,model)
  
  sugImps=[]
@@ -370,56 +370,66 @@ def interxhunt_adjustment_model(df, resp, cats, conts, model, silent=False, weig
  
  sugDf = pd.DataFrame({"Interaction":sugFeats, "Type":sugTypes, "Importance":sugImps})
  sugDf = sugDf.sort_values(['Importance'], ascending=False).reset_index()
- sugDf.to_csv("suggestions.csv")
+ sugDf.to_csv(filename+".csv")
 
 
-def viz_model(model, modelName=0, targetSpan=0.5, boringValue=1, ytitle="Relativity"):
+def viz_model(model, modelName=0, targetSpan=0.5, boringValue=1, ytitle="Relativity", subfolder=None):
  
  try:
   os.mkdir("graphs")
  except:
   pass
  
+ if subfolder!=None:
+  try:
+   os.mkdir("graphs/"+subfolder)
+  except:
+   pass
+  
+  fsf = "graphs/"+subfolder
+ else:
+  fsf="graphs"
+ 
  if "conts" in model:
   for col in model["conts"]:
-   viz.draw_cont_pdp(model["conts"][col], 0.5, col, model=modelName, boringValue=boringValue, ytitle=ytitle)
+   viz.draw_cont_pdp(model["conts"][col], 0.5, col, model=modelName, boringValue=boringValue, ytitle=ytitle, folder=fsf)
  if "cats" in model:
   for col in model["cats"]:
-   viz.draw_cat_pdp(model["cats"][col], 0.5, col, model=modelName, boringValue=boringValue, ytitle=ytitle)
+   viz.draw_cat_pdp(model["cats"][col], 0.5, col, model=modelName, boringValue=boringValue, ytitle=ytitle, folder=fsf)
  if "contconts" in model:
   for cols in model["contconts"]:
    c1, c2 = cols.split(" X ")
-   viz.draw_contcont_pdp(model["contconts"][cols], 0.5, cols, model=modelName, cont1=c1, cont2=c2, boringValue=boringValue, ytitle=ytitle)
-   viz.draw_contcont_pdp_3D(model["contconts"][cols], 0.5, cols+", 3D", model=modelName, cont1=c1, boringValue=boringValue, cont2=c2, ytitle=ytitle)
+   viz.draw_contcont_pdp(model["contconts"][cols], 0.5, cols, model=modelName, cont1=c1, cont2=c2, boringValue=boringValue, ytitle=ytitle, folder=fsf)
+   viz.draw_contcont_pdp_3D(model["contconts"][cols], 0.5, cols+", 3D", model=modelName, cont1=c1, boringValue=boringValue, cont2=c2, ytitle=ytitle, folder=fsf)
  if "catconts" in model:
   for cols in model["catconts"]:
    c1, c2 = cols.split(" X ")
-   viz.draw_catcont_pdp(model["catconts"][cols], 0.5, cols, model=modelName, cat=c1, cont=c2, boringValue=boringValue, ytitle=ytitle)
+   viz.draw_catcont_pdp(model["catconts"][cols], 0.5, cols, model=modelName, cat=c1, cont=c2, boringValue=boringValue, ytitle=ytitle, folder=fsf)
  if "catcats" in model:
   for cols in model["catcats"]:
    c1, c2 = cols.split(" X ")
-   viz.draw_catcat_pdp(model["catcats"][cols], 0.5, cols, model=modelName, cat1=c1, cat2=c2, boringValue=boringValue, ytitle=ytitle)
+   viz.draw_catcat_pdp(model["catcats"][cols], 0.5, cols, model=modelName, cat1=c1, cat2=c2, boringValue=boringValue, ytitle=ytitle, folder=fsf)
 
-def viz_logistic_model(model):
- viz_model(model, boringValue=0, ytitle="LPUs")
+def viz_logistic_model(model, subfolder=None):
+ viz_model(model, boringValue=0, ytitle="LPUs", subfolder=subfolder)
 
-def viz_gamma_models(models):
+def viz_gamma_models(models, subfolder=None):
  if len(models)==1:
-  viz_model(models[0])
+  viz_model(models[0], subfolder=subfolder)
  else:
   for m in range(len(models)):
-   viz_model(models[m], modelName=ALPHABET[m])
+   viz_model(models[m], modelName=ALPHABET[m], subfolder=subfolder)
 
-def viz_gnormal_models(models):
+def viz_gnormal_models(models, subfolder=None):
  if len(models)==2:
   viz_model(models[0])
  else:
   for m in range(len(models)-1):
-   viz_model(models[m], modelName=ALPHABET[m])
- viz_model(models[-1], modelName="PercentageError")
+   viz_model(models[m], modelName=ALPHABET[m], subfolder=subfolder)
+ viz_model(models[-1], modelName="PercentageError", subfolder=subfolder)
 
-def viz_additive_model(model):
- viz_model(model, boringValue=0, ytitle="Delta")
+def viz_additive_model(model, subfolder=None):
+ viz_model(model, boringValue=0, ytitle="Delta", subfolder=subfolder)
 
-def viz_adjustment_model(model):
- viz_model(model, ytitle="Adjustment multiplier")
+def viz_adjustment_model(model, subfolder=None):
+ viz_model(model, ytitle="Adjustment multiplier", subfolder=subfolder)

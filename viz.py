@@ -53,7 +53,7 @@ def get_cat_pdp_prevalences(df, col, threshold=0.05, weightCol=None):
 
 
 
-def draw_cont_pdp(pts, targetSpan=0, name="graph", model=0, boringValue=1, leeway=0.05, ytitle="Relativity"):
+def draw_cont_pdp(pts, targetSpan=0, name="graph", model=0, boringValue=1, leeway=0.05, ytitle="Relativity", folder="graphs"):
  X = [pt[0] for pt in pts]
  Y = [pt[1] for pt in pts]
  layout = {
@@ -71,17 +71,17 @@ def draw_cont_pdp(pts, targetSpan=0, name="graph", model=0, boringValue=1, leewa
    fig.update_layout(title="PDP for "+name+", model "+model, xaxis_title=name, yaxis_title=ytitle)
  
  if (model==0):
-  fig.write_image("graphs/"+name+".png")
-  plotly.offline.plot(fig, filename='graphs/'+name+'.html', auto_open = False)
+  fig.write_image(folder+"/"+name+".png")
+  plotly.offline.plot(fig, filename=folder+"/"+name+'.html', auto_open = False)
  else:
-  fig.write_image("graphs/"+name+"__"+model+".png")
-  plotly.offline.plot(fig, filename='graphs/'+name+'__'+model+'.html', auto_open = False)
+  fig.write_image(folder+"/"+name+"__"+model+".png")
+  plotly.offline.plot(fig, filename=folder+"/"+name+'__'+model+'.html', auto_open = False)
  
 
 
 
 
-def draw_cat_pdp(dyct, targetSpan=0, name="graph", model=0, boringValue=1, leeway=0.05, ytitle="Relativity"):
+def draw_cat_pdp(dyct, targetSpan=0, name="graph", model=0, boringValue=1, leeway=0.05, ytitle="Relativity", folder="graphs"):
  
  X=[]
  Y=[]
@@ -109,13 +109,13 @@ def draw_cat_pdp(dyct, targetSpan=0, name="graph", model=0, boringValue=1, leewa
    fig.update_layout(title="PDP for "+name+", model "+model, xaxis_title=name, yaxis_title=ytitle)
  
  if (model==0):
-  fig.write_image("graphs/"+name+".png")
-  plotly.offline.plot(fig, filename='graphs/'+name+'.html', auto_open = False)
+  fig.write_image(folder+"/"+name+".png")
+  plotly.offline.plot(fig, filename=folder+"/"+name+'.html', auto_open = False)
  else:
-  fig.write_image("graphs/"+name+"__"+model+".png")
-  plotly.offline.plot(fig, filename='graphs/'+name+'__'+model+'.html', auto_open = False)
+  fig.write_image(folder+"/"+name+"__"+model+".png")
+  plotly.offline.plot(fig, filename=folder+"/"+name+'__'+model+'.html', auto_open = False)
 
-def draw_catcat_pdp(catcat, targetSpan=0, name="graph", model=0, boringValue=1, leeway=0.05, ytitle="Relativity", cat1="", cat2="", shapes=['/', '\\', 'x', '-', '|', '+', '.'], colors = ['red','orange','yellow','green','blue','indigo','violet']):
+def draw_catcat_pdp(catcat, targetSpan=0, name="graph", model=0, boringValue=1, leeway=0.05, ytitle="Relativity", cat1="", cat2="", shapes=['/', '\\', 'x', '-', '|', '+', '.'], colors = ['red','orange','yellow','green','blue','indigo','violet'], folder="graphs"):
  
  bars=[]
  
@@ -158,14 +158,14 @@ def draw_catcat_pdp(catcat, targetSpan=0, name="graph", model=0, boringValue=1, 
    fig.update_layout(title="PDP for "+name+", model "+model, xaxis_title=name, yaxis_title=ytitle)
  
  if (model==0):
-  fig.write_image("graphs/"+name+".png")
-  plotly.offline.plot(fig, filename='graphs/'+name+'.html', auto_open = False)
+  fig.write_image(folder+"/"+name+".png")
+  plotly.offline.plot(fig, filename=folder+"/"+name+'.html', auto_open = False)
  else:
-  fig.write_image("graphs/"+name+"__"+model+".png")
-  plotly.offline.plot(fig, filename='graphs/'+name+'__'+model+'.html', auto_open = False)
+  fig.write_image(folder+"/"+name+"__"+model+".png")
+  plotly.offline.plot(fig, filename=folder+"/"+name+'__'+model+'.html', auto_open = False)
  
 
-def draw_catcont_pdp(catcont, targetSpan=0, name="graph", model=0, boringValue=1, leeway=0.05, ytitle="Relativity", cat="", cont="", colors = ['red','orange','yellow','green','blue','indigo','violet']):
+def draw_catcont_pdp(catcont, targetSpan=0, name="graph", model=0, boringValue=1, leeway=0.05, ytitle="Relativity", cat="", cont="", colors = ['red','orange','yellow','green','blue','indigo','violet'], folder="graphs"):
  
  lines=[]
  
@@ -199,15 +199,15 @@ def draw_catcont_pdp(catcont, targetSpan=0, name="graph", model=0, boringValue=1
    fig.update_layout(title="PDP for "+name+", model "+model, xaxis_title=name, yaxis_title=ytitle)
  
  if (model==0):
-  fig.write_image("graphs/"+name+".png")
-  plotly.offline.plot(fig, filename='graphs/'+name+'.html', auto_open = False)
+  fig.write_image(folder+"/"+name+".png")
+  plotly.offline.plot(fig, filename=folder+"/"+name+'.html', auto_open = False)
  else:
-  fig.write_image("graphs/"+name+"__"+model+".png")
-  plotly.offline.plot(fig, filename='graphs/'+name+'__'+model+'.html', auto_open = False)
+  fig.write_image(folder+"/"+name+"__"+model+".png")
+  plotly.offline.plot(fig, filename=folder+"/"+name+'__'+model+'.html', auto_open = False)
  
 
  
-def draw_contcont_pdp(contcont, targetSpan=0, name="graph", model=0, boringValue=1, leeway=0.05, ytitle="Relativity", cont1="", cont2="", lws=[5,7,9,11,13,15,17], colors = ['#00F','#44F','#77F','#99F','#AAF','#CCF']):
+def draw_contcont_pdp(contcont, targetSpan=0, name="graph", model=0, boringValue=1, leeway=0.05, ytitle="Relativity", cont1="", cont2="", lws=[5,7,9,11,13,15,17], colors = ['#00F','#44F','#77F','#99F','#AAF','#CCF'], folder="graphs"):
  lines = []
  
  styleno=0
@@ -238,13 +238,13 @@ def draw_contcont_pdp(contcont, targetSpan=0, name="graph", model=0, boringValue
    fig.update_layout(title="PDP for "+name+", model "+model, xaxis_title=name, yaxis_title=ytitle)
  
  if (model==0):
-  fig.write_image("graphs/"+name+".png")
-  plotly.offline.plot(fig, filename='graphs/'+name+'.html', auto_open = False)
+  fig.write_image(folder+"/"+name+".png")
+  plotly.offline.plot(fig, filename=folder+"/"+name+'.html', auto_open = False)
  else:
-  fig.write_image("graphs/"+name+"__"+model+".png")
-  plotly.offline.plot(fig, filename='graphs/'+name+'__'+model+'.html', auto_open = False)
+  fig.write_image(folder+"/"+name+"__"+model+".png")
+  plotly.offline.plot(fig, filename=folder+"/"+name+'__'+model+'.html', auto_open = False)
  
-def draw_contcont_pdp_3D(contcont, targetSpan=0, name="graph", model=0, boringValue=1, leeway=0.05, ytitle="Relativity", cont1="", cont2=""):
+def draw_contcont_pdp_3D(contcont, targetSpan=0, name="graph", model=0, boringValue=1, leeway=0.05, ytitle="Relativity", cont1="", cont2="", folder="graphs"):
  X1=[]
  X2=[]
  Y=[]
@@ -274,9 +274,9 @@ def draw_contcont_pdp_3D(contcont, targetSpan=0, name="graph", model=0, boringVa
    fig.update_layout(title="PDP for "+name+", model "+model)
  
  if (model==0):
-  plotly.offline.plot(fig, filename='graphs/'+name+'.html', auto_open = False)
+  plotly.offline.plot(fig, filename=folder+"/"+name+'.html', auto_open = False)
  else:
-  plotly.offline.plot(fig, filename='graphs/'+name+'__'+model+'.html', auto_open = False)
+  plotly.offline.plot(fig, filename=folder+"/"+name+'__'+model+'.html', auto_open = False)
  
 
 if __name__=="__main__":

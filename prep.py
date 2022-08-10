@@ -93,11 +93,18 @@ def get_contcont_feat(df, cont1, cont2, contTargetPts1=3, contTargetPts2=3, edge
  
  return feat1
 
-def add_contcont_to_model(model, df, cont1, cont2, contTargetPts1=3, contTargetPts2=3, edge1=0.05, edge2=0.05, defaultValue=1, weightCol=None):
+def add_contcont_to_model(model, df, cont1, cont2, contTargetPts1=3, contTargetPts2=3, edge1=0.05, edge2=0.05, defaultValue=1, weightCol=None, replace=False):
  
  if "contconts" not in model:
   model["contconts"]={}
  model['contconts'][cont1 + " X " + cont2] = get_contcont_feat(df, cont1, cont2, contTargetPts1, contTargetPts2, edge1, edge2, defaultValue, weightCol)
+ 
+ if replace:
+  if "conts" in model:
+   if cont1 in model["conts"]:
+    del model["conts"][cont1]
+   if cont2 in model["conts"]:
+    del model["conts"][cont2]
  
  return model
 
@@ -115,11 +122,19 @@ def get_catcont_feat(df, cat, cont, catMinPrev=0.1, contTargetPts=3, edge=0.05, 
  
  return feat1
 
-def add_catcont_to_model(model, df, cat, cont, catMinPrev=0.1, contTargetPts=3, edge=0.05, defaultValue=1, weightCol=None):
+def add_catcont_to_model(model, df, cat, cont, catMinPrev=0.1, contTargetPts=3, edge=0.05, defaultValue=1, weightCol=None, replace=False):
  
  if "catconts" not in model:
   model["catconts"]={}
  model['catconts'][cat + " X " + cont] = get_catcont_feat(df, cat, cont, catMinPrev, contTargetPts, edge, defaultValue, weightCol)
+ 
+ if replace:
+  if "cats" in model:
+   if cat in model["cats"]:
+    del model["cats"][cat]
+  if "conts" in model:
+   if cont in model["conts"]:
+    del model["conts"][cont]
  
  return model
 
@@ -137,11 +152,18 @@ def get_catcat_feat(df, cat1, cat2, catMinPrev1=0.1, catMinPrev2=0.1, defaultVal
  
  return feat1
 
-def add_catcat_to_model(model, df, cat1, cat2, catMinPrev1=0.1, catMinPrev2=0.1, defaultValue=1, weightCol=None):
+def add_catcat_to_model(model, df, cat1, cat2, catMinPrev1=0.1, catMinPrev2=0.1, defaultValue=1, weightCol=None, replace=False):
  
  if "catcats" not in model:
   model["catcats"]={}
  model['catcats'][cat1 + " X " + cat2] = get_catcat_feat(df, cat1, cat2, catMinPrev1, catMinPrev2, defaultValue, weightCol)
+ 
+ if replace:
+  if "cats" in model:
+   if cat1 in model["cats"]:
+    del model["cats"][cat1]
+   if cat2 in model["cats"]:
+    del model["cats"][cat2]
  
  return model
 

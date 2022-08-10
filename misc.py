@@ -9,27 +9,50 @@ import calculus
 import rele
 import prep
 
+def what_cats(model):
+ if "cats" in model:
+  return [c for c in model["cats"]]
+ else:
+  return []
+
+def what_conts(model):
+ if "conts" in model:
+  return [c for c in model["conts"]]
+ else:
+  return []
+
+def how_many_cats(model):
+ return len(what_cats(model))
+
+def how_many_conts(model):
+ return len(what_conts(model))
+
+
 def de_feat(model, defaultValue=1): #Not expanded to interxes
  oldModel=copy.deepcopy(model)
  newModel={"BASE_VALUE":oldModel["BASE_VALUE"], "conts":{}, "cats":{}}
+ if "featcomb" in oldModel:
+  newModel["featcomb"]=oldModel["featcomb"]
  
- for col in oldModel["conts"]:
-  empty=True
-  for pt in oldModel["conts"][col]:
-   if pt[1]!=defaultValue:
-    empty=False
-  if not empty:
-   newModel["conts"][col]=oldModel["conts"][col]
+ if "conts" in oldModel:
+  for col in oldModel["conts"]:
+   empty=True
+   for pt in oldModel["conts"][col]:
+    if pt[1]!=defaultValue:
+     empty=False
+   if not empty:
+    newModel["conts"][col]=oldModel["conts"][col]
  
- for col in oldModel["cats"]:
-  empty=True
-  if oldModel["cats"][col]["OTHER"]!=defaultValue:
-   empty=False
-  for unique in oldModel["cats"][col]["uniques"]:
-   if oldModel["cats"][col]["uniques"][unique]!=defaultValue:
+ if "cats" in oldModel:
+  for col in oldModel["cats"]:
+   empty=True
+   if oldModel["cats"][col]["OTHER"]!=defaultValue:
     empty=False
-  if not empty:
-   newModel["cats"][col]=oldModel["cats"][col]
+   for unique in oldModel["cats"][col]["uniques"]:
+    if oldModel["cats"][col]["uniques"][unique]!=defaultValue:
+     empty=False
+   if not empty:
+    newModel["cats"][col]=oldModel["cats"][col]
  
  return newModel
 
@@ -278,26 +301,6 @@ def lambdapply(func, slist):
   ldf[i] = slist[i]
  return ldf.apply(lambda x: func(*[x[c] for c in range(len(slist))]), axis=1)
 
-def predict_models(inputDf, models, linkage=calculus.Add_mlink):
- combs = []
- for model in models:
-  if model["featcomb"]=="addl":
-   combs.append(predict_addl(inputDf, model))
-  else:
-   combs.append(predict_mult(inputDf, model))
- return lambdapply(linkage, combs)
-
-def predict(inputDf, model, linkage = "Unity"):
- if "featcomb" in model:
-  if model["featcomb"]=="addl":
-   comb = predict_addl(inputDf, model)
-  else:
-   comb = predict_mult(inputDf, model)
- else:
-  comb = predict_mult(inputDf, model)
- 
- return comb.apply(calculus.links[linkage])
-
 def predict_mult(inputDf, model):
  preds = pd.Series([model["BASE_VALUE"]]*len(inputDf))
  if "conts" in model:
@@ -347,6 +350,40 @@ def predict_addl(inputDf, model):
    preds = preds+effectOfCol
  
  return preds
+
+def predict_model(inputDf, model, linkage = "Unity"):
+ if "featcomb" in model:
+  if model["featcomb"]=="addl":
+   comb = predict_addl(inputDf, model)
+  else:
+   comb = predict_mult(inputDf, model)
+ else:
+  comb = predict_mult(inputDf, model)
+ 
+ if type(linkage)==str:
+  return comb.apply(calculus.links[linkage])
+ else:
+  return comb.apply(linkage)
+
+def predict_models(inputDf, models, linkage=calculus.Add_mlink):
+ combs = []
+ for model in models:
+  combs.append(predict_model(inputDf, model))
+ 
+ if type(linkage)==str:
+  return lambdapply(calculus.links[linkage], combs)
+ else:
+  return lambdapply(linkage, combs)
+
+def predict(inputDf, predictor, linkage=None):
+ if type(predictor)==dict:
+  if linkage==None:
+   return predict_model(inputDf, predictor)
+  return predict_model(inputDf, predictor, linkage)
+ if type(predictor)==list:
+  if linkage==None:
+   return predict_models(inputDf, predictor)
+  return predict_models(inputDf, predictor, linkage)
 
 def round_to_sf(x, sf=5):
  if x==0:

@@ -314,9 +314,9 @@ def train_models(inputDfs, target, nrounds, lrs, startingModels, weightCol=None,
     print("penalties")
    for m in range(len(models)):
     if models[m]['featcomb']=="addl":
-     models[m] = pena.penalize_model(models[m], pens[m], 0)
+     models[m] = pena.penalize_model(models[m], pens[m]*lrs[m], 0)
     else:
-     models[m] = pena.penalize_model(models[m], pens[m], 1)
+     models[m] = pena.penalize_model(models[m], pens[m]*lrs[m], 1)
  
  return models
 
@@ -500,9 +500,9 @@ def train_model(inputDf, target, nrounds, lr, startingModel, weight=None, static
   if prints=="verbose":
    print("penalties")
   if model['featcomb']=="addl":
-   model = pena.penalize_model(model, pen, 0, specificPens)
+   model = pena.penalize_model(model, pen*lr, 0, specificPens)
   else:
-   model = pena.penalize_model(model, pen, 1, specificPens)
+   model = pena.penalize_model(model, pen*lr, 1, specificPens)
  
  return model
 
