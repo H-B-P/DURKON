@@ -352,13 +352,16 @@ def predict_addl(inputDf, model):
  return preds
 
 def predict_model(inputDf, model, linkage = "Unity"):
+ 
+ df = inputDf.reset_index(drop=False)
+ 
  if "featcomb" in model:
   if model["featcomb"]=="addl":
-   comb = predict_addl(inputDf, model)
+   comb = predict_addl(df, model)
   else:
-   comb = predict_mult(inputDf, model)
+   comb = predict_mult(df, model)
  else:
-  comb = predict_mult(inputDf, model)
+  comb = predict_mult(df, model)
  
  if type(linkage)==str:
   return comb.apply(calculus.links[linkage])
@@ -366,6 +369,7 @@ def predict_model(inputDf, model, linkage = "Unity"):
   return comb.apply(linkage)
 
 def predict_models(inputDf, models, linkage=calculus.Add_mlink):
+ 
  combs = []
  for model in models:
   combs.append(predict_model(inputDf, model))
@@ -541,7 +545,10 @@ def caricature_model(model, mult=1, frac=0.5, defaultValue=1): #Not expanded to 
 
 #Functions for evaluating and auditioning.
 
-def get_importance_of_this_cont_col(df, model, col, defaultValue=1):
+def get_importance_of_this_cont_col(inputDf, model, col, defaultValue=1):
+ 
+ df = inputDf.reset_index(drop=True)
+ 
  effects = get_effect_of_this_cont_col(df, model, col)
  if defaultValue==1:
   effects = effects/effects.mean()
@@ -550,7 +557,10 @@ def get_importance_of_this_cont_col(df, model, col, defaultValue=1):
  effects = (effects-defaultValue).apply(abs)
  return effects.mean()
 
-def get_importance_of_this_cat_col(df, model, col, defaultValue=1):
+def get_importance_of_this_cat_col(inputDf, model, col, defaultValue=1):
+ 
+ df = inputDf.reset_index(drop=True)
+ 
  effects = get_effect_of_this_cat_col(df, model, col)
  if defaultValue==1:
   effects = effects/effects.mean()
@@ -559,7 +569,10 @@ def get_importance_of_this_cat_col(df, model, col, defaultValue=1):
  effects = (effects-defaultValue).apply(abs)
  return effects.mean()
 
-def get_importance_of_this_contcont(df, model, cols, defaultValue=1):
+def get_importance_of_this_contcont(inputDf, model, cols, defaultValue=1):
+ 
+ df = inputDf.reset_index(drop=True)
+ 
  effects = get_effect_of_this_contcont(df, model, cols)
  if defaultValue==1:
   effects = effects/effects.mean()
@@ -568,7 +581,10 @@ def get_importance_of_this_contcont(df, model, cols, defaultValue=1):
  effects = (effects-defaultValue).apply(abs)
  return effects.mean()
 
-def get_importance_of_this_catcont(df, model, cols, defaultValue=1):
+def get_importance_of_this_catcont(inputDf, model, cols, defaultValue=1):
+ 
+ df = inputDf.reset_index(drop=True)
+ 
  effects = get_effect_of_this_catcont(df, model, cols)
  if defaultValue==1:
   effects = effects/effects.mean()
@@ -577,7 +593,10 @@ def get_importance_of_this_catcont(df, model, cols, defaultValue=1):
  effects = (effects-defaultValue).apply(abs)
  return effects.mean()
 
-def get_importance_of_this_catcat(df, model, cols, defaultValue=1):
+def get_importance_of_this_catcat(inputDf, model, cols, defaultValue=1):
+ 
+ df = inputDf.reset_index(drop=True)
+ 
  effects = get_effect_of_this_catcat(df, model, cols)
  if defaultValue==1:
   effects = effects/effects.mean()

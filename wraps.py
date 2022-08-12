@@ -14,7 +14,8 @@ import os
 
 ALPHABET="ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-def prep_gamma_models(df, resp, cats, conts, N=1, fractions=None, catMinPrev=0.01, contTargetPts=5, edge=0.01, weightCol=None):
+def prep_gamma_models(inputDf, resp, cats, conts, N=1, fractions=None, catMinPrev=0.01, contTargetPts=5, edge=0.01, weightCol=None):
+ df = inputDf.reset_index(drop=True)
  if fractions==None:
   denom = N*(N+1)/2
   fractions = [(N-x)/denom for x in range(N)]
@@ -25,11 +26,14 @@ def prep_gamma_models(df, resp, cats, conts, N=1, fractions=None, catMinPrev=0.0
   models.append(model)
  return models
 
-def train_gamma_models(df, resp, nrounds, lrs, models, pens=None, weightCol=None, staticFeats=[], prints="normal"):
+def train_gamma_models(inputDf, resp, nrounds, lrs, models, pens=None, weightCol=None, staticFeats=[], prints="normal"):
+ df = inputDf.reset_index(drop=True)
  models = actual_modelling.train_models([df], resp, nrounds, lrs, models, weightCol, staticFeats, lras=calculus.addsmoothing_LRAs, lossgrads=[[calculus.Gamma_grad]], links=[calculus.Add_mlink], linkgrads=[[calculus.Add_mlink_grad]*len(models)], pens=pens, prints=prints)
  return models
 
-def interxhunt_gamma_models(df, resp, cats, conts, models, silent=False, weightCol=None, filename="suggestions"):
+def interxhunt_gamma_models(inputDf, resp, cats, conts, models, silent=False, weightCol=None, filename="suggestions"):
+ 
+ df = inputDf.reset_index(drop=True)
  
  trialModelTemplate = []
  
@@ -90,24 +94,31 @@ def interxhunt_gamma_models(df, resp, cats, conts, models, silent=False, weightC
   sugDf.to_csv(filename+"_"+ALPHABET[m]+".csv")
   
 
-def gnormalize_gamma_models(models, df, resp, cats, conts, startingErrorPercent=20, catMinPrev=0.01, contTargetPts=5, edge=0.01, weightCol=None):
+def gnormalize_gamma_models(models, inputDf, resp, cats, conts, startingErrorPercent=20, catMinPrev=0.01, contTargetPts=5, edge=0.01, weightCol=None):
+ 
+ df = inputDf.reset_index(drop=True)
+ 
  errModel = prep.prep_model(df, resp, cats, conts, catMinPrev, contTargetPts, edge, 1, weightCol)
  errModel["BASE_VALUE"]=startingErrorPercent*1.25/100
  models.append(errModel)
  return models
 
-def train_gnormal_models(dfs, resp, nrounds, lrs, models, pens=None, weightCol=None, staticFeats=[], prints="normal"):
- if type(dfs)!=list:
-  dfs=[dfs]
+def train_gnormal_models(inputDfs, resp, nrounds, lrs, models, pens=None, weightCol=None, staticFeats=[], prints="normal"):
+ if type(inputDfs)!=list:
+  dfs=[inputDfs.reset_index(drop=True)]
+ else:
+  dfs = [inputDf.reset_index(drop=True) for inputDf in inputDfs]
  
  models = actual_modelling.train_models(dfs, resp, nrounds, lrs, models, weightCol, staticFeats, lras = calculus.addsmoothing_LRAs_erry[:len(models)-1] + [calculus.default_LRA], lossgrads = [[calculus.gnormal_u_diff, calculus.gnormal_p_diff],[calculus.gnormal_u_diff_censored, calculus.gnormal_p_diff_censored]], links=[calculus.Add_mlink_allbutlast, calculus.Add_mlink_onlylast], linkgrads=[[calculus.Add_mlink_grad]*(len(models)-1)+[calculus.Add_mlink_grad_void], [calculus.Add_mlink_grad_void]*(len(models)-1)+[calculus.Add_mlink_grad]], pens=pens, prints=prints)
  
  return models
 
-def interxhunt_gnormal_models(dfs, resp, cats, conts, models, silent=False, weightCol=None, filename="suggestions"):
+def interxhunt_gnormal_models(inputDfs, resp, cats, conts, models, silent=False, weightCol=None, filename="suggestions"):
  
- if type(dfs)!=list:
-  dfs=[dfs]
+ if type(inputDfs)!=list:
+  dfs = [inputDfs.reset_index(drop=True)]
+ else:
+  dfs = [inputDf.reset_index(drop=True) for inputDf in inputDfs]
  
  if len(dfs)==2:
   cdf = dfs[0].append(dfs[1]).reset_index()
@@ -185,16 +196,20 @@ def predict_error_from_gnormal(df, model):
  return misc.predict_models(df, model, calculus.Add_mlink_onlylast)*100/1.25
 
 
-def prep_additive_model(df, resp, cats, conts, catMinPrev=0.01, contTargetPts=5, edge=0.01, weightCol=None):
+def prep_additive_model(inputDf, resp, cats, conts, catMinPrev=0.01, contTargetPts=5, edge=0.01, weightCol=None):
+ df = inputDf.reset_index(drop=True)
  model = prep.prep_model(df, resp, cats, conts, catMinPrev, contTargetPts, edge, 0, weightCol)
  model["featcomb"] = "addl"
  return model
 
-def train_additive_model(df, resp, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal"):
+def train_additive_model(inputDf, resp, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal"):
+ df = inputDf.reset_index(drop=True)
  model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, pen=pen, specificPens={}, lossgrad=calculus.Gauss_grad, prints=prints)
  return model
 
-def interxhunt_additive_model(df, resp, cats, conts, model, silent=False, weightCol=None, filename="suggestions"):
+def interxhunt_additive_model(inputDf, resp, cats, conts, model, silent=False, weightCol=None, filename="suggestions"):
+ 
+ df = inputDf.reset_index(drop=True)
  
  df["PredComb"]=misc.predict(df,model)
  
@@ -246,17 +261,26 @@ def interxhunt_additive_model(df, resp, cats, conts, model, silent=False, weight
  sugDf.to_csv(filename+".csv")
 
 
-def prep_classifier_model(df, resp, cats, conts, catMinPrev=0.01, contTargetPts=5, edge=0.01, weightCol=None):
+def prep_classifier_model(inputDf, resp, cats, conts, catMinPrev=0.01, contTargetPts=5, edge=0.01, weightCol=None):
+ 
+ df = inputDf.reset_index(drop=True)
+ 
  model = prep.prep_model(df, resp, cats, conts, catMinPrev, contTargetPts, edge, 0, weightCol)
  model["BASE_VALUE"] = calculus.Logit_delink(model["BASE_VALUE"])
  model["featcomb"] = "addl"
  return model
 
-def train_classifier_model(df, resp, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal"):
+def train_classifier_model(inputDf, resp, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal"):
+ 
+ df = inputDf.reset_index(drop=True)
+ 
  model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, pen=pen, specificPens={}, lossgrad=calculus.Logistic_grad, link = calculus.Logit_link, linkgrad = calculus.Logit_link_grad, prints=prints)
  return model
 
-def interxhunt_classifier_model(df, resp, cats, conts, model, silent=False, weightCol=None, filename="suggestions"):
+def interxhunt_classifier_model(inputDf, resp, cats, conts, model, silent=False, weightCol=None, filename="suggestions"):
+ 
+ df = inputDf.reset_index(drop=True)
+ 
  df["PredComb"]=misc.predict(df,model)
  
  sugImps=[]
@@ -309,7 +333,10 @@ def interxhunt_classifier_model(df, resp, cats, conts, model, silent=False, weig
 
 
 
-def prep_adjustment_model(df, resp, startingPoint, cats, conts, catMinPrev=0.01, contTargetPts=5, edge=0.01, weightCol=None):
+def prep_adjustment_model(inputDf, resp, startingPoint, cats, conts, catMinPrev=0.01, contTargetPts=5, edge=0.01, weightCol=None):
+ 
+ df = inputDf.reset_index(drop=True)
+ 
  model = prep.prep_model(df, resp, cats, conts, catMinPrev, contTargetPts, edge, 1, weightCol)
  model["BASE_VALUE"]=1
  model["featcomb"]="mult"
@@ -318,11 +345,17 @@ def prep_adjustment_model(df, resp, startingPoint, cats, conts, catMinPrev=0.01,
  model["conts"][startingPoint] = [[min(df[startingPoint]), min(df[startingPoint])], [max(df[startingPoint]), max(df[startingPoint])]]
  return model
 
-def train_adjustment_model(df, resp, startingPoint, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal"):
+def train_adjustment_model(inputDf, resp, startingPoint, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal"):
+ 
+ df = inputDf.reset_index(drop=True)
+ 
  model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats=[startingPoint]+staticFeats, pen=pen, specificPens={}, lossgrad=calculus.Gamma_grad, prints=prints)
  return model
 
-def interxhunt_adjustment_model(df, resp, cats, conts, model, silent=False, weightCol=None, filename="suggestions"):
+def interxhunt_adjustment_model(inputDf, resp, cats, conts, model, silent=False, weightCol=None, filename="suggestions"):
+ 
+ df = inputDf.reset_index(drop=True)
+ 
  df["PredComb"]=misc.predict(df,model)
  
  sugImps=[]
