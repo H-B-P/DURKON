@@ -3,6 +3,9 @@ import numpy as np
 import math
 import scipy
 from scipy.special import erf
+
+import misc
+
 #Easy objective functions
 
 def Gauss_grad(pred,act):
@@ -129,19 +132,19 @@ def default_LRA(*args):
 
 
 def addsmoothing_LRA_0(*args):
- return sum([sum(arg) for arg in args])/sum(args[0])
+ return sum([sum(arg.abs()) for arg in args])/sum(args[0].abs())
 
 def addsmoothing_LRA_1(*args):
- return sum([sum(arg) for arg in args])/sum(args[1])
+ return sum([sum(arg.abs()) for arg in args])/sum(args[1].abs())
 
 def addsmoothing_LRA_2(*args):
- return sum([sum(arg) for arg in args])/sum(args[2])
+ return sum([sum(arg.abs()) for arg in args])/sum(args[2].abs())
 
 def addsmoothing_LRA_3(*args):
- return sum([sum(arg) for arg in args])/sum(args[3])
+ return sum([sum(arg.abs()) for arg in args])/sum(args[3].abs())
 
 def addsmoothing_LRA_4(*args):
- return sum([sum(arg) for arg in args])/sum(args[4])
+ return sum([sum(arg.abs()) for arg in args])/sum(args[4].abs())
 
 addsmoothing_LRAs = [addsmoothing_LRA_0,addsmoothing_LRA_1,addsmoothing_LRA_2,addsmoothing_LRA_3,addsmoothing_LRA_4]
 
@@ -159,21 +162,30 @@ def Add_mlink_grad_void(*args):
 
 
 def addsmoothing_LRA_0_erry(*args):
- return sum([sum(arg) for arg in args[:-1]])/sum(args[0])
+ return sum([sum(arg.abs()) for arg in args[:-1]])/sum(args[0].abs())
 
 def addsmoothing_LRA_1_erry(*args):
- return sum([sum(arg) for arg in args[:-1]])/sum(args[1])
+ return sum([sum(arg.abs()) for arg in args[:-1]])/sum(args[1].abs())
 
 def addsmoothing_LRA_2_erry(*args):
- return sum([sum(arg) for arg in args[:-1]])/sum(args[2])
+ return sum([sum(arg.abs()) for arg in args[:-1]])/sum(args[2].abs())
 
 def addsmoothing_LRA_3_erry(*args):
- return sum([sum(arg) for arg in args[:-1]])/sum(args[3])
+ return sum([sum(arg.abs()) for arg in args[:-1]])/sum(args[3].abs())
 
 def addsmoothing_LRA_4_erry(*args):
- return sum([sum(arg) for arg in args[:-1]])/sum(args[4])
+ return sum([sum(arg.abs()) for arg in args[:-1]])/sum(args[4].abs())
 
 addsmoothing_LRAs_erry = [addsmoothing_LRA_0_erry, addsmoothing_LRA_1_erry, addsmoothing_LRA_2_erry, addsmoothing_LRA_3_erry, addsmoothing_LRA_4_erry]
+
+
+#Cratio
+
+def Cratio_mlink(*args):
+ return sum(args)/(sum(args)+1)
+
+def Cratio_mlink_grad(*args):
+ return 1/((sum(args)+1)*(sum(args)+1))
 
 
 #Tobit

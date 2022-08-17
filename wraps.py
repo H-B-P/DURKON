@@ -41,9 +41,9 @@ def interxhunt_gamma_models(inputDf, resp, cats, conts, models, silent=False, we
   df["PredComb_"+str(m)]=misc.predict(df, models[m])
   trialModelTemplate.append({"BASE_VALUE":1, "conts":{"PredComb_"+str(m):[[min(df["PredComb_"+str(m)]),min(df["PredComb_"+str(m)])],[max(df["PredComb_"+str(m)]),max(df["PredComb_"+str(m)])]]}, "featcomb":"mult"})
  
- sugImps=[[]]*len(models)
- sugFeats=[[]]*len(models)
- sugTypes=[[]]*len(models)
+ sugImps=[[] for m in range(len(models))]
+ sugFeats=[[] for m in range(len(models))]
+ sugTypes=[[] for m in range(len(models))]
  
  for i in range(len(cats)):
   for j in range(i+1, len(cats)):
@@ -53,6 +53,7 @@ def interxhunt_gamma_models(inputDf, resp, cats, conts, models, silent=False, we
    trialModels = copy.deepcopy(trialModelTemplate)
    trialModels = [prep.add_catcat_to_model(trialModel, df, cats[i], cats[j], defaultValue=1) for trialModel in trialModels]
    trialModels = train_gamma_models(df, resp, 1, [1]*len(models), trialModels, weightCol, staticFeats=["PredComb_"+str(m) for m in range(len(models))], prints="silent")
+   print(trialModels)
    
    for m in range(len(models)):
     sugFeats[m].append(cats[i]+" X "+cats[j])
@@ -89,6 +90,7 @@ def interxhunt_gamma_models(inputDf, resp, cats, conts, models, silent=False, we
  
  
  for m in range(len(models)):
+  print(sugFeats[m],sugTypes[m],sugImps[m])
   sugDf = pd.DataFrame({"Interaction":sugFeats[m], "Type":sugTypes[m], "Importance":sugImps[m]})
   sugDf = sugDf.sort_values(['Importance'], ascending=False).reset_index()
   sugDf.to_csv(filename+"_"+ALPHABET[m]+".csv")
@@ -137,9 +139,9 @@ def interxhunt_gnormal_models(inputDfs, resp, cats, conts, models, silent=False,
   trialModelTemplate.append({"BASE_VALUE":1, "conts":{"PredComb_"+str(m):[[minever, minever], [maxever, maxever]]}, "featcomb":"mult"})
  
  
- sugImps=[[]]*len(models)
- sugFeats=[[]]*len(models)
- sugTypes=[[]]*len(models)
+ sugImps=[[] for m in range(len(models))]
+ sugFeats=[[] for m in range(len(models))]
+ sugTypes=[[] for m in range(len(models))]
  
  for i in range(len(cats)):
   for j in range(i+1, len(cats)):
@@ -406,6 +408,28 @@ def interxhunt_adjustment_model(inputDf, resp, cats, conts, model, silent=False,
  sugDf.to_csv(filename+".csv")
 
 
+
+
+
+def prep_cratio_models(inputDf, resp, cats, conts, N=1, fractions=None, catMinPrev=0.01, contTargetPts=5, edge=0.01, weightCol=None):
+ df = inputDf.reset_index(drop=True)
+ if fractions==None:
+  denom = N*(N+1)/2
+  fractions = [(N-x)/denom for x in range(N)]
+ models = []
+ for fraction in fractions:
+  model = prep.prep_model(df, resp, cats, conts, catMinPrev, contTargetPts, edge, 1, weightCol)
+  model["BASE_VALUE"] = misc.frac_to_ratio(model["BASE_VALUE"])
+  model["BASE_VALUE"]*=fraction
+  models.append(model)
+ return models
+
+def train_cratio_models(inputDf, resp, nrounds, lrs, models, pens=None, weightCol=None, staticFeats=[], minRela=0.1, prints="normal"):
+ df = inputDf.reset_index(drop=True)
+ models = actual_modelling.train_models([df], resp, nrounds, lrs, models, weightCol, staticFeats, lras=calculus.addsmoothing_LRAs, lossgrads=[[calculus.Logistic_grad]], links=[calculus.Cratio_mlink], linkgrads=[[calculus.Cratio_mlink_grad]*len(models)], pens=pens, minRela=minRela, prints=prints)
+ return models
+
+
 def viz_model(model, modelName=0, targetSpan=0.5, boringValue=1, ytitle="Relativity", subfolder=None):
  
  try:
@@ -466,3 +490,10 @@ def viz_additive_model(model, subfolder=None):
 
 def viz_adjustment_model(model, subfolder=None):
  viz_model(model, ytitle="Adjustment multiplier", subfolder=subfolder)
+ 
+def viz_cratio_models(models, subfolder=None):
+ if len(models)==1:
+  viz_model(models[0], subfolder=subfolder)
+ else:
+  for m in range(len(models)):
+   viz_model(models[m], modelName=ALPHABET[m], subfolder=subfolder)

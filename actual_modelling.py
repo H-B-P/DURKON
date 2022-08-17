@@ -15,7 +15,7 @@ import rele
 #link, linkgrad are per pred; linkgrad is then per model
 #lossgrad is per df, then per pred
 
-def train_models(inputDfs, target, nrounds, lrs, startingModels, weightCol=None, staticFeats = [], lras=None, lossgrads=[[calculus.Gauss_grad]], links=[calculus.Unity_link], linkgrads=[[calculus.Unity_link_grad]], pens=None, prints="verbose"):
+def train_models(inputDfs, target, nrounds, lrs, startingModels, weightCol=None, staticFeats = [], lras=None, lossgrads=[[calculus.Gauss_grad]], links=[calculus.Unity_link], linkgrads=[[calculus.Unity_link_grad]], pens=None, minRela=None, prints="verbose"):
  
  inputDfs = [df.reset_index() for df in inputDfs]
  
@@ -317,10 +317,13 @@ def train_models(inputDfs, target, nrounds, lrs, startingModels, weightCol=None,
      models[m] = pena.penalize_model(models[m], pens[m]*lrs[m], 0)
     else:
      models[m] = pena.penalize_model(models[m], pens[m]*lrs[m], 1)
- 
+  
+  if minRela!=None:
+   models = [misc.enforce_min_rela(model, minRela) for model in models]
+  
  return models
 
-def train_model(inputDf, target, nrounds, lr, startingModel, weight=None, staticFeats = [], pen=0, specificPens={}, lossgrad=calculus.Poisson_grad, link=calculus.Unity_link, linkgrad=calculus.Unity_link_grad, prints="verbose"):
+def train_model(inputDf, target, nrounds, lr, startingModel, weight=None, staticFeats = [], pen=0, specificPens={}, lossgrad=calculus.Poisson_grad, link=calculus.Unity_link, linkgrad=calculus.Unity_link_grad, minRela=None, prints="verbose"):
  
  inputDf = inputDf.reset_index()
  
@@ -503,6 +506,9 @@ def train_model(inputDf, target, nrounds, lr, startingModel, weight=None, static
    model = pena.penalize_model(model, pen*lr, 0, specificPens)
   else:
    model = pena.penalize_model(model, pen*lr, 1, specificPens)
+  
+  if minRela!=None:
+   model = misc.enforce_min_rela(model, minRela)
  
  return model
 

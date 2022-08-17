@@ -9,6 +9,14 @@ import calculus
 import rele
 import prep
 
+
+def ratio_to_frac(x):
+ return x/(x+1)
+
+def frac_to_ratio(x):
+ return 1/((1/x)-1)
+
+
 def what_cats(model):
  if "cats" in model:
   return [c for c in model["cats"]]
@@ -491,14 +499,16 @@ def enforce_min_rela(model, minRela=0.1): #Not expanded to interxes
  
  opModel = copy.deepcopy(model)
  
- for col in opModel["conts"]:
-  for i in range(len(opModel["conts"][col])):
-   opModel["conts"][col][i][1] = max(minRela, opModel["conts"][col][i][1])
+ if "conts" in opModel:
+  for col in opModel["conts"]:
+   for i in range(len(opModel["conts"][col])):
+    opModel["conts"][col][i][1] = max(minRela, opModel["conts"][col][i][1])
  
- for col in opModel["cats"]:
-  for u in opModel["cats"][col]["uniques"]:
-   opModel["cats"][col]["uniques"][u] = max(minRela, opModel["cats"][col]["uniques"][u])
-  opModel["cats"][col]["OTHER"] = max(minRela, opModel["cats"][col]["OTHER"])
+ if "cats" in opModel:
+  for col in opModel["cats"]:
+   for u in opModel["cats"][col]["uniques"]:
+    opModel["cats"][col]["uniques"][u] = max(minRela, opModel["cats"][col]["uniques"][u])
+   opModel["cats"][col]["OTHER"] = max(minRela, opModel["cats"][col]["OTHER"])
  
  return opModel
 
