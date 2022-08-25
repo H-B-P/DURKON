@@ -29,8 +29,6 @@ model = prep.add_contcont_to_model(model, df, 'cont1', 'cont2')
 
 wraps.viz_logistic_model(model, "Logistic")
 
----
-
 #Gamma Proof of Concept
 
 df = pd.DataFrame({"cont1":[1,2,3,4,1,2,3,4], "cont2":[1,2,3,4,5,4,3,4], "cat1":['a','a','a','a','b','b','b','a'], "cat2":['c','c','d','d','c','d','e','d'], "y":[1,2,3,4,5,6,7,8]})
@@ -169,7 +167,7 @@ conts=["cont1","cont2", "cont3"]
 
 models = wraps.prep_cratio_models(df, 'y', cats, conts, 1)
 
-models = wraps.train_cratio_models(df, 'y', 100, [0.2], models, prints="verbose")
+models = wraps.train_cratio_models(df, 'y', 100, [0.2], models)
 
 print(models)
 

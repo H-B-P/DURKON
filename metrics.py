@@ -66,8 +66,8 @@ def get_RMSPE(df, predCol, actCol):
 
 #---
 
-#def get_custom_metric(df, predCol, actCol, OF=[[-1000,0],[-50,0.1],[-20,0.2],[0,1],[10,0],[1000,-99]]):
-# overestPercent = 100*(df[predCol]-df[actCol])/df[actCol]
+def get_custom_metric(df, predCol, actCol, OF=[[-1000,0],[-50,0.1],[-20,0.2],[0,1],[10,0],[1000,-99]]):
+ overestPercent = 100*(df[predCol]-df[actCol])/df[actCol]
  
 
 if __name__ == '__main__':

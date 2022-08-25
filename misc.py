@@ -9,7 +9,6 @@ import calculus
 import rele
 import prep
 
-
 def ratio_to_frac(x):
  return x/(x+1)
 
@@ -164,17 +163,17 @@ def get_effect_of_this_cont_on_single_input(x, cont):
   return cont[-1][1] #everything outside our scope is flat
  return "idk lol"
 
-def get_effect_of_this_cont_col(inputDf, model, col):
- x = inputDf[col]
- effectOfCol = pd.Series([1]*len(inputDf))
- effectOfCol.loc[(x<=model["conts"][col][0][0])] = model["conts"][col][0][1] #Everything too early gets with the program
- for i in range(len(model["conts"][col])-1):
-  x1 = model["conts"][col][i][0]
-  x2 = model["conts"][col][i+1][0]
-  y1 = model["conts"][col][i][1]
-  y2 = model["conts"][col][i+1][1]
+def get_effect_of_this_cont_col(ser, cont):
+ x = ser
+ effectOfCol = pd.Series([1]*len(ser))
+ effectOfCol.loc[(x<=cont[0][0])] = cont[0][1] #Everything too early gets with the program
+ for i in range(len(cont)-1):
+  x1 = cont[i][0]
+  x2 = cont[i+1][0]
+  y1 = cont[i][1]
+  y2 = cont[i+1][1]
   effectOfCol.loc[(x>=x1)&(x<=x2)] = ((x-x1)*y2 + (x2-x)*y1)/(x2 - x1)
- effectOfCol.loc[x>=model["conts"][col][-1][0]] = model["conts"][col][-1][1] #Everything too late gets with the program
+ effectOfCol.loc[x>=cont[-1][0]] = cont[-1][1] #Everything too late gets with the program
  return effectOfCol
 
 def get_effect_of_this_cat_on_single_input(x, cat): #slightly roundabout approach so we can copy for columns
@@ -183,10 +182,10 @@ def get_effect_of_this_cat_on_single_input(x, cat): #slightly roundabout approac
    return cat["uniques"][unique]
  return cat["OTHER"]
 
-def get_effect_of_this_cat_col(inputDf, model, col):
- effectOfCol = pd.Series([model["cats"][col]["OTHER"]]*len(inputDf))
- for unique in model["cats"][col]["uniques"]:
-  effectOfCol[inputDf[col]==unique] = model["cats"][col]["uniques"][unique]
+def get_effect_of_this_cat_col(ser, cat):
+ effectOfCol = pd.Series([cat["OTHER"]]*len(ser))
+ for unique in cat["uniques"]:
+  effectOfCol[ser==unique] = cat["uniques"][unique]
  return effectOfCol
 
 def get_effect_of_this_catcat_on_single_input(x1, x2, catcat):
@@ -195,15 +194,14 @@ def get_effect_of_this_catcat_on_single_input(x1, x2, catcat):
    return get_effect_of_this_cat_on_single_input(x2, catcat["uniques"][unique])
  return get_effect_of_this_cat_on_single_input(x2, catcat["OTHER"])
 
-def get_effect_of_this_catcat(inputDf, model, cols):
- col1, col2 = cols.split(' X ')
- effectOfCol = pd.Series([model["catcats"][cols]["OTHER"]["OTHER"]]*len(inputDf))
- for unique1 in model['catcats'][cols]['uniques']:
-  for unique2 in model['catcats'][cols]['uniques'][unique1]['uniques']:
-   effectOfCol[(inputDf[col1]==unique1) & (inputDf[col2]==unique2)] = model['catcats'][cols]['uniques'][unique1]['uniques'][unique2]
-  effectOfCol[(inputDf[col1]==unique1) & (~inputDf[col2].isin(model['catcats'][cols]['uniques'][unique1]['uniques']))] = model['catcats'][cols]['uniques'][unique1]['OTHER']
- for unique2 in model['catcats'][cols]['OTHER']['uniques']:
-  effectOfCol[(~inputDf[col1].isin(model['catcats'][cols]['uniques'])) & (inputDf[col2]==unique2)] = model['catcats'][cols]['OTHER']['uniques'][unique2]
+def get_effect_of_this_catcat(ser1, ser2, catcat):
+ effectOfCol = pd.Series([catcat["OTHER"]["OTHER"]]*len(ser1))
+ for unique1 in catcat['uniques']:
+  for unique2 in catcat['uniques'][unique1]['uniques']:
+   effectOfCol[(ser1==unique1) & (ser2==unique2)] = catcat['uniques'][unique1]['uniques'][unique2]
+  effectOfCol[(ser1==unique1) & (~ser2.isin(catcat['uniques'][unique1]['uniques']))] = catcat['uniques'][unique1]['OTHER']
+ for unique2 in catcat['OTHER']['uniques']:
+  effectOfCol[(~ser1.isin(catcat['uniques'])) & (ser2==unique2)] = catcat['OTHER']['uniques'][unique2]
  return effectOfCol
 
 def get_effect_of_this_catcont_on_single_input(x1, x2, catcont):
@@ -212,29 +210,29 @@ def get_effect_of_this_catcont_on_single_input(x1, x2, catcont):
    return get_effect_of_this_cont_on_single_input(x2, catcont["uniques"][unique])
  return get_effect_of_this_cont_on_single_input(x2, catcont["OTHER"])
 
-def get_effect_of_this_catcont(inputDf, model, cols):
- col1, col2 = cols.split(' X ')
- x = inputDf[col2]
- effectOfCol = pd.Series([1]*len(inputDf))
+def get_effect_of_this_catcont(ser1, ser2, catcont):
  
- for unique in model['catconts'][cols]['uniques']:
-  effectOfCol.loc[(inputDf[col1]==unique) & (x<=model["catconts"][cols]['uniques'][unique][0][0])] = model["catconts"][cols]['uniques'][unique][0][1] #Everything too early gets with the program
-  for i in range(len(model["catconts"][cols]['uniques'][unique])-1):
-   x1 = model["catconts"][cols]['uniques'][unique][i][0]
-   x2 = model["catconts"][cols]['uniques'][unique][i+1][0]
-   y1 = model["catconts"][cols]['uniques'][unique][i][1]
-   y2 = model["catconts"][cols]['uniques'][unique][i+1][1]
-   effectOfCol.loc[(inputDf[col1]==unique) & (x>=x1)&(x<=x2)] = ((x-x1)*y2 + (x2-x)*y1)/(x2 - x1)
-  effectOfCol.loc[(inputDf[col1]==unique) & (x>=model["catconts"][cols]['uniques'][unique][-1][0])] = model["catconts"][cols]['uniques'][unique][-1][1] #Everything too late gets with the program
+ x = ser2
+ effectOfCol = pd.Series([1]*len(ser1))
+ 
+ for unique in catcont['uniques']:
+  effectOfCol.loc[(ser1==unique) & (x<=catcont['uniques'][unique][0][0])] = catcont['uniques'][unique][0][1] #Everything too early gets with the program
+  for i in range(len(catcont['uniques'][unique])-1):
+   x1 = catcont['uniques'][unique][i][0]
+   x2 = catcont['uniques'][unique][i+1][0]
+   y1 = catcont['uniques'][unique][i][1]
+   y2 = catcont['uniques'][unique][i+1][1]
+   effectOfCol.loc[(ser1==unique) & (x>=x1)&(x<=x2)] = ((x-x1)*y2 + (x2-x)*y1)/(x2 - x1)
+  effectOfCol.loc[(ser1==unique) & (x>=catcont['uniques'][unique][-1][0])] = catcont['uniques'][unique][-1][1] #Everything too late gets with the program
   
- effectOfCol.loc[(~inputDf[col1].isin(model['catconts'][cols]['uniques'])) & (x<=model["catconts"][cols]['OTHER'][0][0])] = model["catconts"][cols]['OTHER'][0][1] #Everything too early gets with the program
- for i in range(len(model["catconts"][cols]['OTHER'])-1):
-  x1 = model["catconts"][cols]['OTHER'][i][0]
-  x2 = model["catconts"][cols]['OTHER'][i+1][0]
-  y1 = model["catconts"][cols]['OTHER'][i][1]
-  y2 = model["catconts"][cols]['OTHER'][i+1][1]
-  effectOfCol.loc[(~inputDf[col1].isin(model['catconts'][cols]['uniques'])) & (x>=x1)&(x<=x2)] = ((x-x1)*y2 + (x2-x)*y1)/(x2 - x1)
- effectOfCol.loc[(~inputDf[col1].isin(model['catconts'][cols]['uniques'])) & (x>=model["catconts"][cols]['OTHER'][-1][0])] = model["catconts"][cols]['OTHER'][-1][1] #Everything too late gets with the program
+ effectOfCol.loc[(~ser1.isin(catcont['uniques'])) & (x<=catcont['OTHER'][0][0])] = catcont['OTHER'][0][1] #Everything too early gets with the program
+ for i in range(len(catcont['OTHER'])-1):
+  x1 = catcont['OTHER'][i][0]
+  x2 = catcont['OTHER'][i+1][0]
+  y1 = catcont['OTHER'][i][1]
+  y2 = catcont['OTHER'][i+1][1]
+  effectOfCol.loc[(~ser1.isin(catcont['uniques'])) & (x>=x1)&(x<=x2)] = ((x-x1)*y2 + (x2-x)*y1)/(x2 - x1)
+ effectOfCol.loc[(~ser1.isin(catcont['uniques'])) & (x>=catcont['OTHER'][-1][0])] = catcont['OTHER'][-1][1] #Everything too late gets with the program
  
  return effectOfCol
 
@@ -244,61 +242,63 @@ def get_effect_of_this_contcont_on_single_input(x1,x2, contcont):
  return get_effect_of_this_cont_on_single_input(x1, x1cont)
 
 
-def get_effect_of_this_contcont(inputDf,model,cols): #we are using x and y to predict z
- col1, col2 = cols.split(' X ')
- x = inputDf[col1]
- y = inputDf[col2]
- effectOfCol = pd.Series([1]*len(inputDf))
+
+
+def get_effect_of_this_contcont(ser1, ser2, contcont): #we are using x and y to predict z
+ 
+ x = ser1
+ y = ser2
+ effectOfCol = pd.Series([1]*len(ser1))
  
  #Corners get with the program
  
- effectOfCol.loc[(x<=model["contconts"][cols][0][0]) & (y<=model["contconts"][cols][0][1][0][0])] = model["contconts"][cols][0][1][0][1]
- effectOfCol.loc[(x>=model["contconts"][cols][-1][0]) & (y<=model["contconts"][cols][-1][1][0][0])] = model["contconts"][cols][-1][1][0][1]
- effectOfCol.loc[(x<=model["contconts"][cols][0][0]) & (y>=model["contconts"][cols][0][1][-1][0])] = model["contconts"][cols][0][1][-1][1]
- effectOfCol.loc[(x>=model["contconts"][cols][-1][0]) & (y>=model["contconts"][cols][-1][1][-1][0])] = model["contconts"][cols][-1][1][-1][1]
+ effectOfCol.loc[(x<=contcont[0][0]) & (y<=contcont[0][1][0][0])] = contcont[0][1][0][1]
+ effectOfCol.loc[(x>=contcont[-1][0]) & (y<=contcont[-1][1][0][0])] = contcont[-1][1][0][1]
+ effectOfCol.loc[(x<=contcont[0][0]) & (y>=contcont[0][1][-1][0])] = contcont[0][1][-1][1]
+ effectOfCol.loc[(x>=contcont[-1][0]) & (y>=contcont[-1][1][-1][0])] = contcont[-1][1][-1][1]
  
  #Edges get with the program
  
- for i in range(len(model["contconts"][cols])-1):
-  x1 = model["contconts"][cols][i][0]
-  x2 = model["contconts"][cols][i+1][0]
-  z1 = model["contconts"][cols][i][1][0][1]
-  z2 = model["contconts"][cols][i+1][1][0][1]
-  effectOfCol.loc[(y<=model["contconts"][cols][i][1][0][0])&(x>=x1)&(x<=x2)] = ((x-x1)*z2 + (x2-x)*z1)/(x2 - x1)
+ for i in range(len(contcont)-1):
+  x1 = contcont[i][0]
+  x2 = contcont[i+1][0]
+  z1 = contcont[i][1][0][1]
+  z2 = contcont[i+1][1][0][1]
+  effectOfCol.loc[(y<=contcont[i][1][0][0])&(x>=x1)&(x<=x2)] = ((x-x1)*z2 + (x2-x)*z1)/(x2 - x1)
  
- for i in range(len(model["contconts"][cols])-1):
-  x1 = model["contconts"][cols][i][0]
-  x2 = model["contconts"][cols][i+1][0]
-  z1 = model["contconts"][cols][i][1][-1][1]
-  z2 = model["contconts"][cols][i+1][1][-1][1]
-  effectOfCol.loc[(y>=model["contconts"][cols][i][1][-1][0])&(x>=x1)&(x<=x2)] = ((x-x1)*z2 + (x2-x)*z1)/(x2 - x1)
+ for i in range(len(contcont)-1):
+  x1 = contcont[i][0]
+  x2 = contcont[i+1][0]
+  z1 = contcont[i][1][-1][1]
+  z2 = contcont[i+1][1][-1][1]
+  effectOfCol.loc[(y>=contcont[i][1][-1][0])&(x>=x1)&(x<=x2)] = ((x-x1)*z2 + (x2-x)*z1)/(x2 - x1)
  
- for i in range(len(model["contconts"][cols][0][1])-1):
-  y1 = model["contconts"][cols][0][1][i][0]
-  y2 = model["contconts"][cols][0][1][i+1][0]
-  z1 = model["contconts"][cols][0][1][i][1]
-  z2 = model["contconts"][cols][0][1][i+1][1]
-  effectOfCol.loc[(x<=model["contconts"][cols][0][0])&(y>=y1)&(y<=y2)] = ((y-y1)*z2 + (y2-y)*z1)/(y2 - y1)
+ for i in range(len(contcont[0][1])-1):
+  y1 = contcont[0][1][i][0]
+  y2 = contcont[0][1][i+1][0]
+  z1 = contcont[0][1][i][1]
+  z2 = contcont[0][1][i+1][1]
+  effectOfCol.loc[(x<=contcont[0][0])&(y>=y1)&(y<=y2)] = ((y-y1)*z2 + (y2-y)*z1)/(y2 - y1)
  
- for i in range(len(model["contconts"][cols][-1][1])-1):
-  y1 = model["contconts"][cols][-1][1][i][0]
-  y2 = model["contconts"][cols][-1][1][i+1][0]
-  z1 = model["contconts"][cols][-1][1][i][1]
-  z2 = model["contconts"][cols][-1][1][i+1][1]
-  effectOfCol.loc[(x>=model["contconts"][cols][-1][0])&(y>=y1)&(y<=y2)] = ((y-y1)*z2 + (y2-y)*z1)/(y2 - y1)
+ for i in range(len(contcont[-1][1])-1):
+  y1 = contcont[-1][1][i][0]
+  y2 = contcont[-1][1][i+1][0]
+  z1 = contcont[-1][1][i][1]
+  z2 = contcont[-1][1][i+1][1]
+  effectOfCol.loc[(x>=contcont[-1][0])&(y>=y1)&(y<=y2)] = ((y-y1)*z2 + (y2-y)*z1)/(y2 - y1)
  
  #The interior
  
- for i in range(len(model["contconts"][cols])-1):
-  x1 = model["contconts"][cols][i][0]
-  x2 = model["contconts"][cols][i+1][0]
-  for j in range(len(model["contconts"][cols][i][1])-1):
-   y1 = model["contconts"][cols][0][1][j][0]
-   y2 = model["contconts"][cols][0][1][j+1][0]
-   z11 = model["contconts"][cols][i][1][j][1]
-   z12 = model["contconts"][cols][i][1][j+1][1]
-   z21 = model["contconts"][cols][i+1][1][j][1]
-   z22 = model["contconts"][cols][i+1][1][j+1][1]
+ for i in range(len(contcont)-1):
+  x1 = contcont[i][0]
+  x2 = contcont[i+1][0]
+  for j in range(len(contcont[i][1])-1):
+   y1 = contcont[0][1][j][0]
+   y2 = contcont[0][1][j+1][0]
+   z11 = contcont[i][1][j][1]
+   z12 = contcont[i][1][j+1][1]
+   z21 = contcont[i+1][1][j][1]
+   z22 = contcont[i+1][1][j+1][1]
    effectOfCol.loc[(x>=x1)&(x<=x2)&(y>=y1)&(y<=y2)] = ((x-x1)*(y-y1)*z22 + (x-x1)*(y2-y)*z21 + (x2-x)*(y-y1)*z12 + (x2-x)*(y2-y)*z11)/((x2 - x1)*(y2 - y1))
  
  return effectOfCol
@@ -313,23 +313,26 @@ def predict_mult(inputDf, model):
  preds = pd.Series([model["BASE_VALUE"]]*len(inputDf))
  if "conts" in model:
   for col in model["conts"]:
-   effectOfCol = get_effect_of_this_cont_col(inputDf, model, col)
+   effectOfCol = get_effect_of_this_cont_col(inputDf[col], model['conts'][col])
    preds = preds*effectOfCol
  if "cats" in model:
   for col in model["cats"]:
-   effectOfCol = get_effect_of_this_cat_col(inputDf, model, col)
+   effectOfCol = get_effect_of_this_cat_col(inputDf[col], model['cats'][col])
    preds = preds*effectOfCol
  if "catcats" in model:
   for cols in model["catcats"]:
-   effectOfCol = get_effect_of_this_catcat(inputDf, model, cols)
+   col1, col2 = cols.split(' X ')
+   effectOfCol = get_effect_of_this_catcat(inputDf[col1], inputDf[col2], model['catcats'][cols])
    preds = preds*effectOfCol
  if "catconts" in model:
   for cols in model["catconts"]:
-   effectOfCol = get_effect_of_this_catcont(inputDf, model, cols)
+   col1, col2 = cols.split(' X ')
+   effectOfCol = get_effect_of_this_catcont(inputDf[col1], inputDf[col2], model['catconts'][cols])
    preds = preds*effectOfCol
  if "contconts" in model:
   for cols in model["contconts"]:
-   effectOfCol = get_effect_of_this_contcont(inputDf, model, cols)
+   col1, col2 = cols.split(' X ')
+   effectOfCol = get_effect_of_this_contcont(inputDf[col1], inputDf[col2], model['contconts'][cols])
    preds = preds*effectOfCol
  
  return preds
@@ -338,23 +341,26 @@ def predict_addl(inputDf, model):
  preds = pd.Series([model["BASE_VALUE"]]*len(inputDf))
  if "conts" in model:
   for col in model["conts"]:
-   effectOfCol = get_effect_of_this_cont_col(inputDf, model, col)
+   effectOfCol = get_effect_of_this_cont_col(inputDf[col], model['conts'][col])
    preds = preds+effectOfCol
  if "cats" in model:
   for col in model["cats"]:
-   effectOfCol = get_effect_of_this_cat_col(inputDf, model, col)
+   effectOfCol = get_effect_of_this_cat_col(inputDf[col], model['cats'][col])
    preds = preds+effectOfCol
  if "catcats" in model:
   for cols in model["catcats"]:
-   effectOfCol = get_effect_of_this_catcat(inputDf, model, cols)
+   col1, col2 = cols.split(' X ')
+   effectOfCol = get_effect_of_this_catcat(inputDf[col1], inputDf[col2], model['catcats'][cols])
    preds = preds+effectOfCol
  if "catconts" in model:
   for cols in model["catconts"]:
-   effectOfCol = get_effect_of_this_catcont(inputDf, model, cols)
+   col1, col2 = cols.split(' X ')
+   effectOfCol = get_effect_of_this_catcont(inputDf[col1], inputDf[col2], model['catconts'][cols])
    preds = preds+effectOfCol
  if "contconts" in model:
   for cols in model["contconts"]:
-   effectOfCol = get_effect_of_this_contcont(inputDf, model, cols)
+   col1, col2 = cols.split(' X ')
+   effectOfCol = get_effect_of_this_contcont(inputDf[col1], inputDf[col2], model['contconts'][cols])
    preds = preds+effectOfCol
  
  return preds
@@ -559,7 +565,7 @@ def get_importance_of_this_cont_col(inputDf, model, col, defaultValue=1):
  
  df = inputDf.reset_index(drop=True)
  
- effects = get_effect_of_this_cont_col(df, model, col)
+ effects = get_effect_of_this_cont_col(df[col], model['conts'][col])
  if defaultValue==1:
   effects = effects/effects.mean()
  if defaultValue==0:
@@ -571,7 +577,7 @@ def get_importance_of_this_cat_col(inputDf, model, col, defaultValue=1):
  
  df = inputDf.reset_index(drop=True)
  
- effects = get_effect_of_this_cat_col(df, model, col)
+ effects = get_effect_of_this_cat_col(df[col], model['cats'][col])
  if defaultValue==1:
   effects = effects/effects.mean()
  if defaultValue==0:
@@ -583,7 +589,8 @@ def get_importance_of_this_contcont(inputDf, model, cols, defaultValue=1):
  
  df = inputDf.reset_index(drop=True)
  
- effects = get_effect_of_this_contcont(df, model, cols)
+ col1, col2 = cols.split(' X ')
+ effects = get_effect_of_this_contcont(df[col1],df[col2], model['contconts'][cols])
  if defaultValue==1:
   effects = effects/effects.mean()
  if defaultValue==0:
@@ -595,7 +602,8 @@ def get_importance_of_this_catcont(inputDf, model, cols, defaultValue=1):
  
  df = inputDf.reset_index(drop=True)
  
- effects = get_effect_of_this_catcont(df, model, cols)
+ col1, col2 = cols.split(' X ')
+ effects = get_effect_of_this_catcont(df[col1],df[col2], model['catconts'][cols])
  if defaultValue==1:
   effects = effects/effects.mean()
  if defaultValue==0:
@@ -607,7 +615,8 @@ def get_importance_of_this_catcat(inputDf, model, cols, defaultValue=1):
  
  df = inputDf.reset_index(drop=True)
  
- effects = get_effect_of_this_catcat(df, model, cols)
+ col1, col2 = cols.split(' X ')
+ effects = get_effect_of_this_catcat(df[col1],df[col2], model['catcats'][cols])
  if defaultValue==1:
   effects = effects/effects.mean()
  if defaultValue==0:
@@ -646,153 +655,6 @@ def list_importances(df, model):
  op = op.sort_values(["imp"], ascending=False).reset_index().drop("index", axis=1)
  return op
 
-def suggest_interactions_based_on_importances(df, model):
- impDf = list_importances(df,model)
- count=0
- simpDf = impDf[impDf['type'].isin(["cont","cat"])].reset_index()
- op = {'interx':[],"type":[],'imp':[]}
- for i in range(len(simpDf)):
-  for j in range(i+1, len(simpDf)):
-   interx1 = simpDf["col"][i]+" X "+simpDf["col"][j]
-   interx2 = simpDf["col"][i]+" X "+simpDf["col"][j]
-   t = simpDf['type'][i]+simpDf['type'][j]
-   if t=="contcat":
-    t="catcont"
-   imp = simpDf["imp"][i]*simpDf["imp"][j] #should this be multiplicative or additive?
-   if (interx1 not in impDf["col"]) and (interx2 not in impDf["col"]):
-    op['interx'].append(interx1)
-    op['type'].append(t)
-    op['imp'].append(imp)
- op = pd.DataFrame(op)
- op = op.sort_values(["imp"], ascending=False).reset_index().drop("index", axis=1)
- return op
-
-
-def audition_this_cat(cat, inputSeries, err):
- assert(len(err)==len(inputSeries))
- rel = rele.produce_cat_relevances(inputSeries, cat)
- promises = np.matmul(err, rel)
- return sum(abs(promises))/len(err)
-
-def audition_this_cont(cont, inputSeries, err):
- assert(len(err)==len(inputSeries))
- rel = rele.produce_cont_relevances(inputSeries, cont)
- promises = np.matmul(err, rel)
- return sum(abs(promises))/len(err)
-
-def audition_this_catcat(catcat, inputSeries1, inputSeries2, err):
- assert(len(err)==len(inputSeries1))
- rel = rele.produce_catcat_relevances(inputSeries1, inputSeries2, catcat)
- promises = np.matmul(err, rel)
- print(promises)
- print(abs(promises))
- return sum(abs(promises))/len(err)
- 
-def audition_this_catcont(catcont, inputSeries1, inputSeries2, err):
- assert(len(err)==len(inputSeries1))
- rel = rele.produce_catcont_relevances(inputSeries1, inputSeries2, catcont)
- promises = np.matmul(err, rel)
- print(promises)
- print(abs(promises))
- return sum(abs(promises))/len(err)
-
-def audition_this_contcont(contcont, inputSeries1, inputSeries2, err):
- assert(len(err)==len(inputSeries1))
- rel = rele.produce_contcont_relevances(inputSeries1, inputSeries2, contcont)
- promises = np.matmul(err, rel)
- print(promises)
- print(abs(promises))
- return sum(abs(promises))/len(err)
-
 
 if __name__ == '__main__':
- exampleModel = {"BASE_VALUE": 1700, "cats":{'cat1':{'uniques':{'a':1,'b':1,'c':1,'d':1},'OTHER':1},'cat2':{'uniques':{'w':1,'x':1.1,'y':1,'z':1},'OTHER':1}}, "conts":{'cont1':[[0,1],[50,1.1]],'cont2':[[0,0.5],[20,1.5]]}}
- 
- exampleDf = pd.DataFrame({"cont1":[0,25,50, 30], "cont2":[2,3,8,19], "cat1":["a","b","c","d"],"cat2":["w",'x','y','z'], "y":[5,7,9,11]})
- 
- print(get_importance_of_this_cont_col(exampleDf, exampleModel, "cont1"))
- print(get_importance_of_this_cont_col(exampleDf, exampleModel, "cont2"))
- print(get_importance_of_this_cat_col(exampleDf, exampleModel, "cat1"))
- print(get_importance_of_this_cat_col(exampleDf, exampleModel, "cat2"))
- 
- print(list_importances(exampleDf,exampleModel))
- print(suggest_interactions_based_on_importances(exampleDf,exampleModel))
- 
-
-if False: #__name__ == '__main__':
- exampleModel = {"BASE_VALUE": 1700, 'catcats':{'cat1 X cat2':{'uniques':{'a':{'uniques':{'x':1.1,'y':1.2,'z':1.1},'OTHER':1}, 'b':{'uniques':{'x':1.1,'y':1.2,'z':1.1},'OTHER':1}, 'c':{'uniques':{'x':1.1,'y':1.2,'z':1.7},'OTHER':1}}, 'OTHER':{'uniques':{'x':1.1,'y':1.2,'z':1.1},'OTHER':1}}}, 'catconts':{'cat1 X cont1':{'uniques':{'a':[[0,0.8], [50,1.2]], 'b':[[0,0.8], [50,1.2]], 'c':[[0,0.8], [50,1.8]]}, 'OTHER':[[0,0.8], [50,1.2]]}}, 'contconts':{'cont1 X cont2': [[0,[[0,1.1], [20,1.2]]], [50,[[0,1.3], [20,1.4]]]]}}
- exampleDf = pd.DataFrame({"cont1":[0,25,50, 30], "cont2":[2,3,8,19], "cat1":["a","b","c","d"],"cat2":["w",'x','y','z'], "y":[5,7,9,11]})
- 
- print(get_effect_of_this_catcat(exampleDf, exampleModel, "cat1 X cat2"))
- print(get_effect_of_this_catcont(exampleDf, exampleModel, "cat1 X cont1"))
- 
- exampleDf = pd.DataFrame({"cont1":[25], "cont2":[10], 'y':[5]})
- 
- print(get_effect_of_this_contcont(exampleDf, exampleModel, "cont1 X cont2"))
- 
- exampleDf = pd.DataFrame({"cont1":[-999,999,-999,999], "cont2":[-999,-999,999,999], 'y':[5,5,5,5]})
- 
- print(get_effect_of_this_contcont(exampleDf, exampleModel, "cont1 X cont2"))
- 
- exampleDf = pd.DataFrame({"cont1":[-999,10,999,10], "cont2":[10,-999,10,999], 'y':[5,5,5,5]})
- 
- print(get_effect_of_this_contcont(exampleDf, exampleModel, "cont1 X cont2"))
-
-if False:#__name__ == '__main__':
- exampleModel = {"BASE_VALUE":1700,"conts":{"cont1":[[0.01, 1],[0.02,1.1], [0.03, 1.06]], "cont2":[[37,1.2],[98, 0.9]]}, "cats":{"cat1":{"uniques":{"wstfgl":1.05, "florpalorp":0.92}, "OTHER":1.04}}}
- exampleDf = pd.DataFrame({"cont1":[0.013,0.015,0.025, 0.035], "cont2":[37,48,45,51], "cat1":["wstfgl","florpalorp","dukis","welp"], "y":[5,7,9,11]})
- 
- print(get_effect_of_this_cont_col_on_single_input(0.012, exampleModel['conts']["cont1"])) #should be 1.02
- print(get_effect_of_this_cont_col_on_single_input(0.04, exampleModel['conts']["cont1"])) #should be 1.06
- print(get_effect_of_this_cat_col_on_single_input("florpalorp", exampleModel['conts']["cat1"])) #should be 0.92
- print(get_effect_of_this_cat_col_on_single_input(12, exampleModel['conts']["cat1"])) #should be 1.04
- 
- print(list(get_effect_of_this_cat_col(exampleDf, exampleModel, "cat1"))) #[1.05,0.92,1.04,1.04]
- print(list(get_effect_of_this_cont_col(exampleDf, exampleModel, "cont1"))) #[1.03,1.05,1.08,1.06]
-
- print(caricature_model(exampleModel,2, 0.5))
- 
- 
-if False: #__name__ == '__main__':
- df =  pd.DataFrame({"cat1":['a','a','a','a','b'],'cat2':['d','c','d','c','c'],"y":[1,1,1,1,2]})
- model = {"BASE_VALUE":1.2, 'conts':{}, 'cats':{}}
- err = misc.predict(df, model) - df["y"]
- print(err)
- print(audition_this_cat({"OTHER":1,"uniques":{"a":1, "b":1}}, df['cat1'], err))
- print(audition_this_cat({"OTHER":1,"uniques":{"c":1, "d":1}}, df['cat2'], err))
- 
- df =  pd.DataFrame({"cont1":[1,2,3,4,5],'cont2':[1,2,3,4,3],'cont3':[1,2,3,2,1],"y":[1,2,3,4,5]})
- model = {"BASE_VALUE":3, 'conts':{}, 'cats':{}}
- err = misc.predict(df, model) - df["y"]
- print(err)
- print(audition_this_cont([[1,1],[5,1]], df['cont1'], err))
- print(audition_this_cont([[1,1],[4,1]], df['cont2'], err))
- print(audition_this_cont([[1,1],[3,1]], df['cont3'], err))
- 
- df =  pd.DataFrame({"cat1":['a','a','a','a','b','b','b','b'], 'cat2':['c','c','d','d','c','c','d','d'], 'cat3':['e','f','e','f','e','f','e','f'], "y":[1,1,1,1,1,1,2,2]})
- model = {"BASE_VALUE":1.25, 'conts':{}, 'cats':{}}
- err = misc.predict(df, model) - df["y"]
- print(err)
- print(audition_this_catcat({"OTHER":{"OTHER":1,"uniques":{"c":1, "d":1}},"uniques":{"a":{"OTHER":1,"uniques":{"c":1, "d":1}}, "b":{"OTHER":1,"uniques":{"c":1, "d":1}}}}, df['cat1'], df['cat2'], err))
- print(audition_this_catcat({"OTHER":{"OTHER":1,"uniques":{"e":1, "f":1}},"uniques":{"c":{"OTHER":1,"uniques":{"e":1, "f":1}}, "d":{"OTHER":1,"uniques":{"e":1, "f":1}}}}, df['cat2'], df['cat3'], err))
- print(audition_this_catcat({"OTHER":{"OTHER":1,"uniques":{"e":1, "f":1}},"uniques":{"a":{"OTHER":1,"uniques":{"e":1, "f":1}}, "b":{"OTHER":1,"uniques":{"e":1, "f":1}}}}, df['cat1'], df['cat3'], err))
- 
- df =  pd.DataFrame({"cat1":['a','a','a','a','b','b','b','b'], 'cat2':['c','c','d','d','c','c','d','d'], 'cont1':[1,2,1,2,1,2,1,2], 'cont2':[1,1000,1,1000,1,1000,1,1000], "y":[1,1,1,1,1,2,1,2]})
- model = {"BASE_VALUE":1.25, 'conts':{}, 'cats':{}}
- err = misc.predict(df, model) - df["y"]
- print(err)
- print(audition_this_catcont({"OTHER":[[1,1],[2,1]],"uniques":{"a":[[1,1],[2,1]], "b":[[1,1],[2,1]]}}, df['cat1'], df['cont1'], err))
- print(audition_this_catcont({"OTHER":[[1,1],[2,1]],"uniques":{"c":[[1,1],[2,1]], "d":[[1,1],[2,1]]}}, df['cat2'], df['cont1'], err))
- 
- print(audition_this_catcont({"OTHER":[[1,1],[2,1]],"uniques":{"a":[[1,1],[2,1]], "b":[[1,1],[2,1]]}}, df['cat1'], df['cont2'], err))
- 
- 
- 
- df =  pd.DataFrame({"cont1":[1,1,1,1,2,2,2,2], 'cont2':[1,1,2,2,1,1,2,2], 'cont3':[1,2,1,2,1,2,1,2], "y":[1,1,1,1,1,1,2,2]})
- model = {"BASE_VALUE":1.25, 'conts':{}, 'cats':{}}
- err = misc.predict(df, model) - df["y"]
- print(err)
- print(audition_this_contcont([[1,[[1,1],[2,1]]],[2,[[1,1],[2,1]]]], df['cont1'], df['cont2'], err))
- print(audition_this_contcont([[1,[[1,1],[2,1]]],[2,[[1,1],[2,1]]]], df['cont2'], df['cont3'], err))
- print(audition_this_contcont([[1,[[1,1],[2,1]]],[2,[[1,1],[2,1]]]], df['cont1'], df['cont3'], err))
-
+ pass
