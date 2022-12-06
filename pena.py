@@ -60,7 +60,8 @@ def penalize_model(model, pen, defaultValue=1, specificPenas={}):
    for u in model["catconts"][catcont]["uniques"]:
     for i in range(len(model["catconts"][catcont]["uniques"][u])):
      model["catconts"][catcont]["uniques"][u][i][1] = move_to_default(model["catconts"][catcont]["uniques"][u][i][1], l, defaultValue)
-   model["catconts"][catcont]["OTHER"][i][1] = move_to_default(model["catconts"][catcont]["OTHER"][i][1], l, defaultValue)
+   for i in range(len(model["catconts"][catcont]["OTHER"])):
+    model["catconts"][catcont]["OTHER"][i][1] = move_to_default(model["catconts"][catcont]["OTHER"][i][1], l, defaultValue)
  
  if "contconts" in model:
   for contcont in model["contconts"]:

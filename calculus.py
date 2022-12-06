@@ -125,7 +125,7 @@ def Mult_mlink_grad_2_B(x1,x2):
  return x1
 
 
-#lras
+#Learning Rate Adjustments
 
 def default_LRA(*args):
  return 1

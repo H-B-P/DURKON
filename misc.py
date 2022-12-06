@@ -3,11 +3,36 @@ import numpy as np
 import math
 import copy
 import time
+import datetime
+import json
+import os
 
 import util
 import calculus
 import rele
 import prep
+
+
+def save_model(model, name="model", folder="models", timing=True):
+ try:
+  os.mkdir(folder)
+ except:
+  pass
+ 
+ fullName = name
+ if timing:
+  now = datetime.datetime.now()
+  fullName = fullName + "-" + str(now.year) + "-" + str(now.month) + "-" + str(now.day) + "-" + str(now.hour) + "-" + str(now.minute)+ "-" + str(now.second)  
+ 
+ with open(folder+'/'+fullName+".txt",'w') as f:
+  f.write(json.dumps(model))
+ #with open(fullName+".txt",'w') as f:
+
+
+def load_model(filename):
+ file = open(filename)
+ return json.load(file)
+
 
 def ratio_to_frac(x):
  return x/(x+1)
@@ -63,11 +88,6 @@ def de_feat(model, defaultValue=1): #Not expanded to interxes
  
  return newModel
 
-def get_sorted_keys(cat):
- keys = [c for c in cat["uniques"]]
- keys.sort()
- return keys
-
 def get_effect_of_this_cont_col_from_relevances(reles, model, col, defaultValue=1):
  postmultmat = np.array([pt[1] for pt in model["conts"][col]]+[defaultValue])
  return np.matmul(reles,postmultmat)
@@ -80,7 +100,7 @@ def get_effects_of_cont_cols_from_relevance_dict(releDict, model):
  return opDict
  
 def get_effect_of_this_cat_col_from_relevances(reles, model, col):
- skeys = get_sorted_keys(model['cats'][col])
+ skeys = util.get_sorted_keys(model['cats'][col]["uniques"])
  postmultmat = np.array([model["cats"][col]["uniques"][key] for key in skeys]+[model["cats"][col]["OTHER"]])
  return np.matmul(reles,postmultmat)
  
@@ -92,8 +112,8 @@ def get_effects_of_cat_cols_from_relevance_dict(releDict, model):
  return opDict
 
 def get_effect_of_this_catcat_from_relevances(reles, model, cols):
- skeys1 = get_sorted_keys(model['catcats'][cols])
- skeys2 = get_sorted_keys(model['catcats'][cols]["OTHER"])
+ skeys1 = util.get_sorted_keys(model['catcats'][cols]["uniques"])
+ skeys2 = util.get_sorted_keys(model['catcats'][cols]["OTHER"]["uniques"])
  postmultmat = []
  for key1 in skeys1:
   postmultmat = postmultmat+[model['catcats'][cols]['uniques'][key1]['uniques'][key2] for key2 in skeys2]+[model['catcats'][cols]['uniques'][key1]['OTHER']]
@@ -102,7 +122,7 @@ def get_effect_of_this_catcat_from_relevances(reles, model, cols):
  return np.matmul(reles, postmultmat)
  
 def get_effect_of_this_catcont_from_relevances(reles, model, cols, defaultValue=1):
- skeys = get_sorted_keys(model["catconts"][cols])
+ skeys = util.get_sorted_keys(model["catconts"][cols]["uniques"])
  postmultmat = []
  for key in skeys:
   postmultmat = postmultmat + [pt[1] for pt in model["catconts"][cols]['uniques'][key]]+[defaultValue]
@@ -487,7 +507,7 @@ def normalize_model(model, totReleDict): #Not expanded to interxes
  
  for col in totReleDict["cats"]:
   relaTimesRele = 0
-  skeys = get_sorted_keys(model['cats'][col])
+  skeys = util.get_sorted_keys(model['cats'][col]["uniques"])
   for i in range(len(skeys)):
    relaTimesRele += opModel["cats"][col]["uniques"][skeys[i]] * totReleDict["cats"][col][i]
   relaTimesRele += opModel["cats"][col]["OTHER"] * totReleDict["cats"][col][-1]

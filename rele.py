@@ -1,10 +1,6 @@
 import numpy as np
 import pandas as pd
-
-def get_sorted_keys(cat):
- keys = [c for c in cat["uniques"]]
- keys.sort()
- return keys
+import util
 
 def produce_cont_relevances(inputSeries, cont):
  reles=np.zeros((len(cont)+1,len(inputSeries)))
@@ -34,7 +30,7 @@ def produce_cont_relevances_dict(inputDf, model):
 def produce_cat_relevances(inputSeries, cat):
  reles=np.zeros((len(cat["uniques"])+1,len(inputSeries)))
  
- skeys = get_sorted_keys(cat)
+ skeys = util.get_sorted_keys(cat["uniques"])
  for i in range(len(skeys)):
   reles[i][inputSeries.isin([skeys[i]])] = 1 #d(featpred)/d(pt)
  reles[-1][~inputSeries.isin(skeys)] = 1 #d(featpred)/d(pt)

@@ -3,6 +3,8 @@ import numpy as np
 import plotly.graph_objects as go
 import plotly
 
+import misc
+
 def get_cont_pdp_prevalences(df, col, intervals=10, weightCol=None):
  cdf= df.copy()
  
@@ -53,12 +55,12 @@ def get_cat_pdp_prevalences(df, col, threshold=0.05, weightCol=None):
 
 
 
-def draw_cont_pdp(pts, targetSpan=0, name="graph", model=0, boringValue=1, leeway=0.05, ytitle="Relativity", folder="graphs"):
+def draw_cont_pdp(pts, targetSpan=0, name="graph", model=0, defaultValue=1, leeway=0.05, ytitle="Relativity", folder="graphs"):
  X = [pt[0] for pt in pts]
  Y = [pt[1] for pt in pts]
  layout = {
   "yaxis": {
-    "range": [min(min(Y)-leeway, boringValue-targetSpan), max(max(Y)+leeway, boringValue+targetSpan)]
+    "range": [min(min(Y)-leeway, defaultValue-targetSpan), max(max(Y)+leeway, defaultValue+targetSpan)]
   }
  }
  
@@ -81,22 +83,22 @@ def draw_cont_pdp(pts, targetSpan=0, name="graph", model=0, boringValue=1, leewa
 
 
 
-def draw_cat_pdp(dyct, targetSpan=0, name="graph", model=0, boringValue=1, leeway=0.05, ytitle="Relativity", folder="graphs"):
+def draw_cat_pdp(dyct, targetSpan=0, name="graph", model=0, defaultValue=1, leeway=0.05, ytitle="Relativity", folder="graphs", otherName="OTHER"):
  
  X=[]
  Y=[]
  for thing in dyct["uniques"]:
   X.append(thing)
   Y.append(dyct["uniques"][thing])
- #if (dyct["OTHER"]!=boringValue):
- X.append("OTHER")
- Y.append(dyct["OTHER"])
+ if (dyct["OTHER"]!=defaultValue):
+  X.append(otherName)
+  Y.append(dyct["OTHER"])
  
  #print(X,Y)
  
  layout = {
   "yaxis": {
-    "range": [min(min(Y)-leeway, 0), max(max(Y)+leeway, boringValue+targetSpan)]
+    "range": [min(min(Y)-leeway, 0, defaultValue-targetSpan), max(max(Y)+leeway, defaultValue+targetSpan)]
   }
  }
  
@@ -115,7 +117,7 @@ def draw_cat_pdp(dyct, targetSpan=0, name="graph", model=0, boringValue=1, leewa
   fig.write_image(folder+"/"+name+"__"+model+".png")
   plotly.offline.plot(fig, filename=folder+"/"+name+'__'+model+'.html', auto_open = False)
 
-def draw_catcat_pdp(catcat, targetSpan=0, name="graph", model=0, boringValue=1, leeway=0.05, ytitle="Relativity", cat1="", cat2="", shapes=['/', '\\', 'x', '-', '|', '+', '.'], colors = ['red','orange','yellow','green','blue','indigo','violet'], folder="graphs"):
+def draw_catcat_pdp(catcat, targetSpan=0, name="graph", model=0, defaultValue=1, leeway=0.05, ytitle="Relativity", cat1="", cat2="", shapes=['/', '\\', 'x', '-', '|', '+', '.'], colors = ['red','orange','yellow','green','blue','indigo','violet'], folder="graphs", otherName="OTHER"):
  
  bars=[]
  
@@ -127,22 +129,30 @@ def draw_catcat_pdp(catcat, targetSpan=0, name="graph", model=0, boringValue=1, 
   for thing2 in catcat["uniques"][thing1]['uniques']:
    X2.append(thing2)
    Y.append(catcat["uniques"][thing1]['uniques'][thing2])
-  X2.append("OTHER")
-  Y.append(catcat["uniques"][thing1]["OTHER"])
+  if (catcat["uniques"][thing1]["OTHER"]!=defaultValue):
+   X2.append(otherName)
+   Y.append(catcat["uniques"][thing1]["OTHER"])
   bars.append(go.Bar(name=thing1, x=X2, y=Y, marker_color=colors[styleno], marker_pattern={'shape':shapes[styleno]}))
   styleno+=1
+ 
  X2=[]
  Y=[]
+ botherWithOther=False
  for thing2 in catcat["OTHER"]["uniques"]:
   X2.append(thing2)
   Y.append(catcat["OTHER"]["uniques"][thing2])
- X2.append("OTHER")
+  if (catcat["OTHER"]["uniques"][thing2]!=defaultValue):
+   botherWithOther=True
+ X2.append(otherName)
  Y.append(catcat["OTHER"]["OTHER"])
- bars.append(go.Bar(name="OTHER", x=X2, y=Y, marker_color='gray', marker_pattern={'shape':''}))
+ if catcat["OTHER"]["OTHER"]!=defaultValue:
+  botherWithOther=True
+ if botherWithOther:
+  bars.append(go.Bar(name=otherName, x=X2, y=Y, marker_color='gray', marker_pattern={'shape':''}))
  
  layout = {
   "yaxis": {
-    "range": [min(min(Y)-leeway, 0), max(max(Y)+leeway, boringValue+targetSpan)]
+    "range": [min(min(Y)-leeway, 0, defaultValue-targetSpan), max(max(Y)+leeway, defaultValue+targetSpan)]
   }
  }
  
@@ -163,27 +173,33 @@ def draw_catcat_pdp(catcat, targetSpan=0, name="graph", model=0, boringValue=1, 
  else:
   fig.write_image(folder+"/"+name+"__"+model+".png")
   plotly.offline.plot(fig, filename=folder+"/"+name+'__'+model+'.html', auto_open = False)
- 
 
-def draw_catcont_pdp(catcont, targetSpan=0, name="graph", model=0, boringValue=1, leeway=0.05, ytitle="Relativity", cat="", cont="", colors = ['red','orange','yellow','green','blue','indigo','violet'], folder="graphs"):
+def draw_catcont_pdp(catcont, targetSpan=0, name="graph", model=0, defaultValue=1, leeway=0.05, ytitle="Relativity", cat="", cont="", colors = ['red','orange','yellow','green','blue','indigo','violet'], folder="graphs", otherName="OTHER"):
  
  lines=[]
  
  styleno=0
  
+ botherWithOther=False
+ for pt in catcont["OTHER"]:
+  if (pt[1]!=defaultValue):
+   botherWithOther=True
+ 
  Y = []
  for thing in catcont['uniques']:
   Y=Y+[pt[1] for pt in catcont['uniques'][thing]]
- Y=Y+[pt[1] for pt in catcont['OTHER']]
+ if botherWithOther:
+  Y=Y+[pt[1] for pt in catcont['OTHER']]
  
  for thing in catcont['uniques']:
   lines.append(go.Scatter(name=thing, x=[pt[0] for pt in catcont['uniques'][thing]], y=[pt[1] for pt in catcont['uniques'][thing]], marker_symbol=styleno+1, marker_color=colors[styleno], marker_size=10))
   styleno+=1
- lines.append(go.Scatter(name="OTHER", x=[pt[0] for pt in catcont['OTHER']], y=[pt[1] for pt in catcont['OTHER']], marker_symbol=0, marker_color="gray", marker_size=10))
+ if botherWithOther:
+  lines.append(go.Scatter(name=otherName, x=[pt[0] for pt in catcont['OTHER']], y=[pt[1] for pt in catcont['OTHER']], marker_symbol=0, marker_color="gray", marker_size=10))
  
  layout = {
   "yaxis": {
-    "range": [min(min(Y)-leeway, 0), max(max(Y)+leeway, boringValue+targetSpan)]
+    "range": [min(min(Y)-leeway, 0, defaultValue-targetSpan), max(max(Y)+leeway, defaultValue+targetSpan)]
   }
  }
  
@@ -207,7 +223,7 @@ def draw_catcont_pdp(catcont, targetSpan=0, name="graph", model=0, boringValue=1
  
 
  
-def draw_contcont_pdp(contcont, targetSpan=0, name="graph", model=0, boringValue=1, leeway=0.05, ytitle="Relativity", cont1="", cont2="", lws=[5,7,9,11,13,15,17], colors = ['#00F','#44F','#77F','#99F','#AAF','#CCF'], folder="graphs"):
+def draw_contcont_pdp(contcont, targetSpan=0, name="graph", model=0, defaultValue=1, leeway=0.05, ytitle="Relativity", cont1="", cont2="", lws=[5,7,9,11,13,15,17], colors = ['#00F','#44F','#77F','#99F','#AAF','#CCF'], folder="graphs"):
  lines = []
  
  styleno=0
@@ -222,7 +238,7 @@ def draw_contcont_pdp(contcont, targetSpan=0, name="graph", model=0, boringValue
  
  layout = {
   "yaxis": {
-    "range": [min(min(Y)-leeway, 0), max(max(Y)+leeway, boringValue+targetSpan)]
+    "range": [min(min(Y)-leeway, defaultValue-targetSpan), max(max(Y)+leeway, defaultValue+targetSpan)]
   }
  }
  
@@ -244,7 +260,7 @@ def draw_contcont_pdp(contcont, targetSpan=0, name="graph", model=0, boringValue
   fig.write_image(folder+"/"+name+"__"+model+".png")
   plotly.offline.plot(fig, filename=folder+"/"+name+'__'+model+'.html', auto_open = False)
  
-def draw_contcont_pdp_3D(contcont, targetSpan=0, name="graph", model=0, boringValue=1, leeway=0.05, ytitle="Relativity", cont1="", cont2="", folder="graphs"):
+def draw_contcont_pdp_3D(contcont, targetSpan=0, name="graph", model=0, defaultValue=1, leeway=0.05, ytitle="Relativity", cont1="", cont2="", folder="graphs"):
  X1=[]
  X2=[]
  Y=[]
@@ -256,7 +272,7 @@ def draw_contcont_pdp_3D(contcont, targetSpan=0, name="graph", model=0, boringVa
  
  layout = {
   "zaxis": {
-    "range": [min(min(Y)-leeway, 0), max(max(Y)+leeway, boringValue+targetSpan)]
+    "range": [min(min(Y)-leeway, defaultValue-targetSpan), max(max(Y)+leeway, defaultValue+targetSpan)]
   }
  }
  
@@ -266,6 +282,54 @@ def draw_contcont_pdp_3D(contcont, targetSpan=0, name="graph", model=0, boringVa
                     xaxis_title=cont1,
                     yaxis_title=cont2,
                     zaxis_title=ytitle))
+ 
+ if name!="graph":
+  if (model==0):
+   fig.update_layout(title="PDP for "+name)
+  else:
+   fig.update_layout(title="PDP for "+name+", model "+model)
+ 
+ if (model==0):
+  plotly.offline.plot(fig, filename=folder+"/"+name+'.html', auto_open = False)
+ else:
+  plotly.offline.plot(fig, filename=folder+"/"+name+'__'+model+'.html', auto_open = False)
+
+
+def get_cont_inputs(cont, detail=1):
+ op=[]
+ for i in range(len(cont)-1):
+  for j in range(detail):
+   op.append(float(cont[i][0]*(detail-j) + cont[i+1][0]*j)/detail)
+ op.append(cont[-1][0])
+ return op
+
+def draw_contcont_pdp_heatmap(contcont, targetSpan=0, name="graph", model=0, defaultValue=1, leeway=0.05, ytitle="Relativity", cont1="", cont2="", folder="graphs", detail=10):
+ X1=[]
+ X2=[]
+ Y=[]
+ 
+ X1 = get_cont_inputs(contcont, detail)
+ X2 = get_cont_inputs(contcont[0][1], detail)
+ 
+ #for pt in contcont:
+ # X1.append(pt[0])
+ #for pt in contcont[0][1]:
+ # X2.append(pt[0])
+ 
+ for i in range(len(X1)-1):
+  newYs=[]
+  for j in range(len(X2)-1):
+   newYs.append(misc.get_effect_of_this_contcont_on_single_input((X1[i]+X1[i+1])/2,(X2[j]+X2[j+1])/2, contcont))
+  Y.append(newYs)
+ 
+ Ymin = min([min(l) for l in Y])
+ Ymax = max([max(l) for l in Y])
+ 
+ fig = go.Figure(data=[go.Heatmap(x=X1, y=X2, z=Y, type='heatmap', colorscale="bluered", zmin =min(Ymin-leeway, defaultValue-targetSpan), zmax = max(Ymax+leeway, defaultValue+targetSpan), zmid=defaultValue, colorbar=dict(title=ytitle))])
+ 
+ 
+ fig.update_layout( xaxis=dict(title=cont1),
+                    yaxis=dict(title=cont2))
  
  if name!="graph":
   if (model==0):
@@ -296,5 +360,6 @@ if __name__=="__main__":
  exampleContCont = [[0,[[18,1.1],[29,1.2],[75,1.3]]],[10,[[18,1.0],[29,1.1],[75,1.1]]],[20,[[18,0.9],[29,1.4],[75,1.2]]]]
  draw_contcont_pdp(exampleContCont, 0.5, "Vehicle_Age X Owner_Age", cont1="Vehicle_Age", cont2="Owner_Age", ytitle="Multiplier")
  draw_contcont_pdp_3D(exampleContCont, 0.5, "Vehicle_Age X Owner_Age (alternative 3D version)", cont1="Vehicle_Age", cont2="Owner_Age", ytitle="Multiplier")
+ draw_contcont_pdp_heatmap(exampleContCont, 0.5, "Vehicle_Age X Owner_Age (alternative heatmap version)", cont1="Vehicle_Age", cont2="Owner_Age", ytitle="Multiplier")
  
  

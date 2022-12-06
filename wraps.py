@@ -430,7 +430,7 @@ def train_cratio_models(inputDf, resp, nrounds, lrs, models, pens=None, weightCo
  return models
 
 
-def viz_model(model, modelName=0, targetSpan=0.5, boringValue=1, ytitle="Relativity", subfolder=None):
+def viz_model(model, modelName=0, targetSpan=0.5, defaultValue=1, ytitle="Relativity", subfolder=None, otherName="OTHER", heatmapDetail=10):
  
  try:
   os.mkdir("graphs")
@@ -449,51 +449,52 @@ def viz_model(model, modelName=0, targetSpan=0.5, boringValue=1, ytitle="Relativ
  
  if "conts" in model:
   for col in model["conts"]:
-   viz.draw_cont_pdp(model["conts"][col], 0.5, col, model=modelName, boringValue=boringValue, ytitle=ytitle, folder=fsf)
+   viz.draw_cont_pdp(model["conts"][col], 0.5, col, model=modelName, defaultValue=defaultValue, ytitle=ytitle, folder=fsf)
  if "cats" in model:
   for col in model["cats"]:
-   viz.draw_cat_pdp(model["cats"][col], 0.5, col, model=modelName, boringValue=boringValue, ytitle=ytitle, folder=fsf)
+   viz.draw_cat_pdp(model["cats"][col], 0.5, col, model=modelName, defaultValue=defaultValue, ytitle=ytitle, folder=fsf, otherName=otherName)
  if "contconts" in model:
   for cols in model["contconts"]:
    c1, c2 = cols.split(" X ")
-   viz.draw_contcont_pdp(model["contconts"][cols], 0.5, cols, model=modelName, cont1=c1, cont2=c2, boringValue=boringValue, ytitle=ytitle, folder=fsf)
-   viz.draw_contcont_pdp_3D(model["contconts"][cols], 0.5, cols+", 3D", model=modelName, cont1=c1, boringValue=boringValue, cont2=c2, ytitle=ytitle, folder=fsf)
+   viz.draw_contcont_pdp(model["contconts"][cols], 0.5, cols, model=modelName, cont1=c1, cont2=c2, defaultValue=defaultValue, ytitle=ytitle, folder=fsf)
+   viz.draw_contcont_pdp_3D(model["contconts"][cols], 0.5, cols+", 3D", model=modelName, cont1=c1, defaultValue=defaultValue, cont2=c2, ytitle=ytitle, folder=fsf)
+   viz.draw_contcont_pdp_heatmap(model["contconts"][cols], 0.5, cols+", Heatmap", model=modelName, cont1=c1, defaultValue=defaultValue, cont2=c2, ytitle=ytitle, folder=fsf, detail=heatmapDetail)
  if "catconts" in model:
   for cols in model["catconts"]:
    c1, c2 = cols.split(" X ")
-   viz.draw_catcont_pdp(model["catconts"][cols], 0.5, cols, model=modelName, cat=c1, cont=c2, boringValue=boringValue, ytitle=ytitle, folder=fsf)
+   viz.draw_catcont_pdp(model["catconts"][cols], 0.5, cols, model=modelName, cat=c1, cont=c2, defaultValue=defaultValue, ytitle=ytitle, folder=fsf, otherName=otherName)
  if "catcats" in model:
   for cols in model["catcats"]:
    c1, c2 = cols.split(" X ")
-   viz.draw_catcat_pdp(model["catcats"][cols], 0.5, cols, model=modelName, cat1=c1, cat2=c2, boringValue=boringValue, ytitle=ytitle, folder=fsf)
+   viz.draw_catcat_pdp(model["catcats"][cols], 0.5, cols, model=modelName, cat1=c1, cat2=c2, defaultValue=defaultValue, ytitle=ytitle, folder=fsf, otherName=otherName)
 
-def viz_logistic_model(model, subfolder=None):
- viz_model(model, boringValue=0, ytitle="LPUs", subfolder=subfolder)
+def viz_logistic_model(model, subfolder=None, targetSpan=0.5, otherName="OTHER"):
+ viz_model(model, defaultValue=0, ytitle="LPUs", subfolder=subfolder, targetSpan=targetSpan, otherName=otherName)
 
-def viz_gamma_models(models, subfolder=None):
+def viz_gamma_models(models, subfolder=None, targetSpan=0.5, otherName="OTHER"):
  if len(models)==1:
-  viz_model(models[0], subfolder=subfolder)
+  viz_model(models[0], subfolder=subfolder, targetSpan=targetSpan, otherName=otherName)
  else:
   for m in range(len(models)):
-   viz_model(models[m], modelName=ALPHABET[m], subfolder=subfolder)
+   viz_model(models[m], modelName=ALPHABET[m], subfolder=subfolder, targetSpan=targetSpan, otherName=otherName)
 
-def viz_gnormal_models(models, subfolder=None):
+def viz_gnormal_models(models, subfolder=None, targetSpan=0.5, otherName="OTHER"):
  if len(models)==2:
-  viz_model(models[0])
+  viz_model(models[0], subfolder=subfolder, targetSpan=targetSpan, otherName=otherName)
  else:
   for m in range(len(models)-1):
-   viz_model(models[m], modelName=ALPHABET[m], subfolder=subfolder)
- viz_model(models[-1], modelName="PercentageError", subfolder=subfolder)
+   viz_model(models[m], modelName=ALPHABET[m], subfolder=subfolder, targetSpan=targetSpan, otherName=otherName)
+ viz_model(models[-1], modelName="PercentageError", subfolder=subfolder, targetSpan=targetSpan, otherName=otherName)
 
-def viz_additive_model(model, subfolder=None):
- viz_model(model, boringValue=0, ytitle="Delta", subfolder=subfolder)
+def viz_additive_model(model, subfolder=None, targetSpan=0.5, otherName="OTHER"):
+ viz_model(model, defaultValue=0, ytitle="Delta", subfolder=subfolder, targetSpan=targetSpan, otherName=otherName)
 
-def viz_adjustment_model(model, subfolder=None):
- viz_model(model, ytitle="Adjustment multiplier", subfolder=subfolder)
+def viz_adjustment_model(model, subfolder=None, targetSpan=0.5, otherName="OTHER"):
+ viz_model(model, ytitle="Adjustment multiplier", subfolder=subfolder, targetSpan=targetSpan, otherName=otherName)
  
-def viz_cratio_models(models, subfolder=None):
+def viz_cratio_models(models, subfolder=None, targetSpan=0.5, otherName="OTHER"):
  if len(models)==1:
-  viz_model(models[0], subfolder=subfolder)
+  viz_model(models[0], subfolder=subfolder, targetSpan=targetSpan, otherName=otherName)
  else:
   for m in range(len(models)):
-   viz_model(models[m], modelName=ALPHABET[m], subfolder=subfolder)
+   viz_model(models[m], modelName=ALPHABET[m], subfolder=subfolder, targetSpan=targetSpan, otherName=otherName)

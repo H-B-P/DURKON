@@ -29,6 +29,16 @@ model = prep.add_contcont_to_model(model, df, 'cont1', 'cont2')
 
 wraps.viz_logistic_model(model, "Logistic")
 
+#Saving and Loading
+
+misc.save_model(model)
+
+misc.save_model(model, name="q", timing=False)
+m = misc.load_model("models/q.txt")
+
+print(m)
+print(model)
+
 #Gamma Proof of Concept
 
 df = pd.DataFrame({"cont1":[1,2,3,4,1,2,3,4], "cont2":[1,2,3,4,5,4,3,4], "cat1":['a','a','a','a','b','b','b','a'], "cat2":['c','c','d','d','c','d','e','d'], "y":[1,2,3,4,5,6,7,8]})

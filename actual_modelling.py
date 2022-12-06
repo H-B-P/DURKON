@@ -183,7 +183,7 @@ def train_models(inputDfs, target, nrounds, lrs, startingModels, weightCol=None,
      linkgradient = linkgradients[p][m]
      lossgradient = lossgradients[p]
      
-     if type(linkgradient)==type(pd.Series()):
+     if type(linkgradient)==type(pd.Series([])):
       
       if "conts" in model:
        if prints=="verbose":
@@ -216,7 +216,7 @@ def train_models(inputDfs, target, nrounds, lrs, startingModels, weightCol=None,
          ceoc = combs[m]/effectOfCol #d(comb)/d(feat)
          finalGradients = np.matmul(np.array(lossgradient*linkgradient*ceoc),cawrd[col]) #d(Loss)/d(pt) = d(Loss)/d(pred) * d(pred)/d(comb)* d(comb)/d(feat) * d(feat)/d(pt)
         
-        skeys = misc.get_sorted_keys(model['cats'][col])
+        skeys = util.get_sorted_keys(model['cats'][col]["uniques"])
         
         #all the uniques . . .
         for k in range(len(skeys)):
@@ -242,8 +242,8 @@ def train_models(inputDfs, target, nrounds, lrs, startingModels, weightCol=None,
          ceoc = combs[m]/effectOfCols #d(comb)/d(feat)
          finalGradients = np.matmul(np.array(lossgradient*linkgradient*ceoc),wird[cols]) #d(Loss)/d(pt) = d(Loss)/d(pred) * d(pred)/d(comb)* d(comb)/d(feat) * d(feat)/d(pt)
         
-        skeys1 = misc.get_sorted_keys(model['catcats'][cols])
-        skeys2 = misc.get_sorted_keys(model['catcats'][cols]["OTHER"])
+        skeys1 = util.get_sorted_keys(model['catcats'][cols]["uniques"])
+        skeys2 = util.get_sorted_keys(model['catcats'][cols]["OTHER"]["uniques"])
         
         for i in range(len(skeys1)):
          for j in range(len(skeys2)):
@@ -276,7 +276,7 @@ def train_models(inputDfs, target, nrounds, lrs, startingModels, weightCol=None,
          ceoc = combs[m]/effectOfCols #d(comb)/d(feat)
          finalGradients = np.matmul(np.array(lossgradient*linkgradient*ceoc),wird[cols]) #d(Loss)/d(pt) = d(Loss)/d(pred) * d(pred)/d(comb)* d(comb)/d(feat) * d(feat)/d(pt)
         
-        skeys = misc.get_sorted_keys(model['catconts'][cols])
+        skeys = util.get_sorted_keys(model['catconts'][cols]["uniques"])
         
         for i in range(len(skeys)):
          for j in range(len(model['catconts'][cols]["OTHER"])):
@@ -407,7 +407,7 @@ def train_model(inputDf, target, nrounds, lr, startingModel, weight=None, static
      ceoc = comb/effectOfCol #d(comb)/d(feat)
      finalGradients = np.matmul(np.array(lossgradient*linkgradient*ceoc),cawrd[col]) #d(Loss)/d(pt) = d(Loss)/d(pred) * d(pred)/d(comb)* d(comb)/d(feat) * d(feat)/d(pt)
     
-    skeys = misc.get_sorted_keys(model['cats'][col])
+    skeys = util.get_sorted_keys(model['cats'][col]["uniques"])
     
     #all the uniques . . .
     for k in range(len(skeys)):
@@ -433,8 +433,8 @@ def train_model(inputDf, target, nrounds, lr, startingModel, weight=None, static
      ceoc = comb/effectOfCols #d(comb)/d(feat)
      finalGradients = np.matmul(np.array(lossgradient*linkgradient*ceoc),wird[cols]) #d(Loss)/d(pt) = d(Loss)/d(pred) * d(pred)/d(comb)* d(comb)/d(feat) * d(feat)/d(pt)
     
-    skeys1 = misc.get_sorted_keys(model['catcats'][cols])
-    skeys2 = misc.get_sorted_keys(model['catcats'][cols]["OTHER"])
+    skeys1 = util.get_sorted_keys(model['catcats'][cols]["uniques"])
+    skeys2 = util.get_sorted_keys(model['catcats'][cols]["OTHER"]["uniques"])
     
     for i in range(len(skeys1)):
      for j in range(len(skeys2)):
@@ -444,7 +444,7 @@ def train_model(inputDf, target, nrounds, lr, startingModel, weight=None, static
      totRele = twird[cols][i*(len(skeys2)+1)+len(skeys2)]
      if totRele>0:
       model['catcats'][cols]["uniques"][skeys1[i]]['OTHER'] -= finalGradients[i*(len(skeys2)+1)+len(skeys2)]*lr/totRele
-   
+    
     for j in range(len(skeys2)):
      totRele = twird[cols][len(skeys1)*(len(skeys2)+1)+j]
      if totRele>0:
@@ -467,7 +467,7 @@ def train_model(inputDf, target, nrounds, lr, startingModel, weight=None, static
      ceoc = comb/effectOfCols #d(comb)/d(feat)
      finalGradients = np.matmul(np.array(lossgradient*linkgradient*ceoc),wird[cols]) #d(Loss)/d(pt) = d(Loss)/d(pred) * d(pred)/d(comb)* d(comb)/d(feat) * d(feat)/d(pt)
     
-    skeys = misc.get_sorted_keys(model['catconts'][cols])
+    skeys = util.get_sorted_keys(model['catconts'][cols]["uniques"])
     
     for i in range(len(skeys)):
      for j in range(len(model['catconts'][cols]["OTHER"])):
@@ -500,20 +500,21 @@ def train_model(inputDf, target, nrounds, lr, startingModel, weight=None, static
        model['contconts'][cols][i][1][j][1] -= finalGradients[i*(len(model['contconts'][cols][0][1])+1)+j]*lr/totRele
   
   #Penalize!
-  if prints=="verbose":
-   print("penalties")
-  if model['featcomb']=="addl":
-   model = pena.penalize_model(model, pen*lr, 0, specificPens)
-  else:
-   model = pena.penalize_model(model, pen*lr, 1, specificPens)
-  
-  if minRela!=None:
-   model = misc.enforce_min_rela(model, minRela)
+  if pen>0:
+   if prints=="verbose":
+    print("penalties")
+   if model['featcomb']=="addl":
+    model = pena.penalize_model(model, pen*lr, 0, specificPens)
+   else:
+    model = pena.penalize_model(model, pen*lr, 1, specificPens)
+   
+   if minRela!=None:
+    model = misc.enforce_min_rela(model, minRela)
  
  return model
 
 
-if __name__ == '__main__':
+if False: #__name__ == '__main__':
  df = pd.DataFrame({"x":[1,2,3],"y":[2,3,4]})
  models = [{"BASE_VALUE":1.0,"conts":{"x":[[0,1],[4,1]]}, "cats":[],'featcomb':'mult'}]
  newModels = train_models([df], "y",100, [0.02], models)
@@ -568,7 +569,12 @@ if __name__ == '__main__':
 
 
 
-
+if __name__ == '__main__':
+ df = pd.DataFrame({"cat1":[True, True, True, False, False, False],'cat2':[True, False, True, False, True, False],"y":[2,1,2,0,1,0]})
+ model = {"BASE_VALUE":1.0,"conts":{}, "featcomb":'addl', "cats":{"cat1":{"uniques":{True:1,False:1,},"OTHER":1}, "cat2":{"uniques":{True:1,False:1},"OTHER":1}}}
+ model = train_model(df, 'y', 500, 0.1, model, lossgrad=calculus.Gauss_grad)
+ print(model)
+ 
 
 
 if False:#__name__ == '__main__':

@@ -18,3 +18,7 @@ def get_gradient(x, y):
  return numerator/denominator
 
 
+def get_sorted_keys(d):
+ keys = [c for c in d]
+ keys.sort(key=str)
+ return keys
