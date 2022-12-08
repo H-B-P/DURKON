@@ -9,6 +9,7 @@ import misc
 import calculus
 import pena
 import rele
+import prep
 
 #pens, lrs, staticFeatLists, specificPenses and models are per model
 #relelistlists are listed per df, then per model
@@ -370,11 +371,39 @@ def train_model(inputDf, target, nrounds, lr, startingModel, weight=None, static
    comb = misc.comb_from_effects_addl(model["BASE_VALUE"], len(inputDf), contEffects, catEffects, interxEffects)
   else:
    comb = misc.comb_from_effects_mult(model["BASE_VALUE"], len(inputDf), contEffects, catEffects, interxEffects)
-   
+  
+  if "flink" in model:
+   flinkEffect = misc.get_effect_of_this_cont_col(comb, model["flink"])
+   preFlinkComb = comb
+   if model['featcomb']=="addl":
+    comb = comb+flinkEffect
+   else:
+    comb = comb*flinkEffect
+  
   linkgradient = linkgrad(comb) #d(pred)/d(comb)
   
   pred = comb.apply(link)
   lossgradient = lossgrad(pred, np.array(inputDf[target])) #d(Loss)/d(pred)
+  
+  #Adjust adjustable model components one-by-one . . .
+  
+  if "flink" in model:
+   if prints=="verbose":
+    print("adjust flink")
+   
+   flinkRele = rele.produce_cont_relevances(preFlinkComb, model["flink"])#Has to be reproduced every turn because the dist changes over time (it better!)
+   
+   if model["featcomb"]=="addl":
+    finalGradients = np.matmul(np.array(lossgradient*linkgradient),w*flinkRele)#d(Loss)/d(pt) = d(Loss)/d(pred) * d(pred)/d(comb) * d(comb)/d(pt)
+   else:
+    finalGradients = np.matmul(np.array(lossgradient*linkgradient*preFlinkComb),w*flinkRele) #d(Loss)/d(pt) = d(Loss)/d(pred) * d(pred)/d(comb)* d(comb)/d(feat) * d(feat)/d(pt)
+   
+   
+   totReles = rele.sum_and_listify_matrix(w*flinkRele)
+   for k in range(len(model['flink'])):
+    totRele = totReles[k]
+    if totRele!=0:
+     model["flink"][k][1] -= finalGradients[k]*lr/totRele
   
   if "conts" in model:
    if prints=="verbose":
@@ -514,9 +543,25 @@ def train_model(inputDf, target, nrounds, lr, startingModel, weight=None, static
  return model
 
 
+if __name__ == '__main__':
+ df = pd.DataFrame({"cont1":[0,1,0,1],"cat1":[0,0,1,1],"y":[0,1,1,4]})
+ model = {"BASE_VALUE":1.0,"conts":{"cont1":[[0,0],[1,1]]}, "cats":{"cat1":{"uniques":{0:0, 1:0},"OTHER":0}},'featcomb':'addl'}
+ model = train_model(df, "y", 100, 0.1, model, lossgrad=calculus.Gauss_grad)
+ print(model)
+ print(misc.predict(df, model))
+ df["preds"] = misc.predict(df, model)
+ model["flink"] = prep.get_cont_feat(df, "preds",3, 0.001, 0)
+ model = train_model(df, "y", 100, 0.1, model, lossgrad=calculus.Gauss_grad)
+ print(model)
+ print(misc.predict(df, model))
+
+
+
+
+
 if False: #__name__ == '__main__':
  df = pd.DataFrame({"x":[1,2,3],"y":[2,3,4]})
- models = [{"BASE_VALUE":1.0,"conts":{"x":[[0,1],[4,1]]}, "cats":[],'featcomb':'mult'}]
+ models = [{"BASE_VALUE":1.0,"conts":{"x":[[0,1],[4,1]]}, "cats":{},'featcomb':'mult'}]
  newModels = train_models([df], "y",100, [0.02], models)
  for newModel in newModels:
   misc.explain(newModel)
@@ -569,7 +614,7 @@ if False: #__name__ == '__main__':
 
 
 
-if __name__ == '__main__':
+if False:#__name__ == '__main__':
  df = pd.DataFrame({"cat1":[True, True, True, False, False, False],'cat2':[True, False, True, False, True, False],"y":[2,1,2,0,1,0]})
  model = {"BASE_VALUE":1.0,"conts":{}, "featcomb":'addl', "cats":{"cat1":{"uniques":{True:1,False:1,},"OTHER":1}, "cat2":{"uniques":{True:1,False:1},"OTHER":1}}}
  model = train_model(df, 'y', 500, 0.1, model, lossgrad=calculus.Gauss_grad)

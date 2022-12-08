@@ -209,3 +209,22 @@ def gnormal_u_diff_censored(u, p, y):
 
 def gnormal_p_diff_censored(u, p, y):
  return -(((y-u)/p)*PDF(u,p,y)/CDF(u,p,y))
+ 
+#Techne
+
+def techne_mult_eval(pred,act, obj=[[-1,-1],[0,1],[1,-1]]):
+ err = (pred-act)/act
+ return sum(misc.get_effect_of_this_cont_col(err, obj))/len(err)
+
+def create_techne_mult_grad(obj):
+ def techne_grad(pred, act):
+  err = (pred-act)/act
+  op = pd.Series([0]*len(err))
+  op[err<=obj[0][0]] = (obj[1][1]-obj[0][1])/(obj[1][0]-obj[0][0])
+  for i in range(len(obj)-1):
+   subset = (err>=obj[i][0]) & (err<=obj[i+1][0])
+   op[subset] = (obj[i+1][1]-obj[i][1])/(obj[i+1][0]-obj[i][0])
+  op[err>=obj[-1][0]] = (obj[-1][1]-obj[-2][1])/(obj[-1][0]-obj[-2][0])
+  return op
+ return techne_grad
+ 

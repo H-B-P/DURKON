@@ -354,6 +354,9 @@ def predict_mult(inputDf, model):
    col1, col2 = cols.split(' X ')
    effectOfCol = get_effect_of_this_contcont(inputDf[col1], inputDf[col2], model['contconts'][cols])
    preds = preds*effectOfCol
+ if "flink" in model:
+  effectOfFlink = get_effect_of_this_cont_col(preds, model["flink"])
+  preds = preds*effectOfFlink
  
  return preds
 
@@ -382,7 +385,9 @@ def predict_addl(inputDf, model):
    col1, col2 = cols.split(' X ')
    effectOfCol = get_effect_of_this_contcont(inputDf[col1], inputDf[col2], model['contconts'][cols])
    preds = preds+effectOfCol
- 
+ if "flink" in model:
+  effectOfFlink = get_effect_of_this_cont_col(preds, model["flink"])
+  preds = preds+effectOfFlink
  return preds
 
 def predict_model(inputDf, model, linkage = "Unity"):
@@ -473,7 +478,10 @@ def roundify_contcont(contcont, sf=5):
 
 
 def explain(model, sf=5):
+ print(model)
  print("BASE_VALUE", round_to_sf(model["BASE_VALUE"], sf))
+ if "flink" in model:
+  print("flink", roundify_cont(model["flink"], sf))
  if "cats" in model:
   for col in model["cats"]:
    print(col, roundify_cat(model["cats"][col], sf))

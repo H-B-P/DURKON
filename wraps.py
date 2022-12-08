@@ -430,6 +430,19 @@ def train_cratio_models(inputDf, resp, nrounds, lrs, models, pens=None, weightCo
  return models
 
 
+def flinkify_additive_model(inputDf, model, contTargetPts=5, edge=0.0, weightCol=None):
+ df = inputDf.reset_index(drop=True)
+ df["preds"] = misc.predict(df, model)
+ model["flink"] = prep.get_cont_feat(df, "preds",contTargetPts, edge, 0, weightCol=weightCol)
+ return model
+ 
+def flinkify_multiplicative_model(inputDf, model, contTargetPts=5, edge=0.0, weightCol=None):
+ df = inputDf.reset_index(drop=True)
+ df["preds"] = misc.predict(df, model)
+ model["flink"] = prep.get_cont_feat(df, "preds",contTargetPts, edge, 1, weightCol=weightCol)
+ return model
+
+
 def viz_model(model, modelName=0, targetSpan=0.5, defaultValue=1, ytitle="Relativity", subfolder=None, otherName="OTHER", heatmapDetail=10):
  
  try:

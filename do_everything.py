@@ -194,3 +194,16 @@ print(df["y"])
 
 wraps.viz_cratio_models(models, "Cratio")
 
+#---
+
+#Flink Proof of Concept
+
+df = pd.DataFrame({"cont1":[0,1,0,1],"cat1":[0,0,1,1],"y":[0,1,1,4]})
+model = wraps.prep_additive_model(df, "y", ["cat1"], ["cont1"])
+model = wraps.train_additive_model(df, "y", 100, 0.1, model)
+print(model)
+print(misc.predict(df, model))
+model = wraps.flinkify_additive_model(df,model)
+model = wraps.train_additive_model(df, "y", 100, 0.1, model)
+print(model)
+print(misc.predict(df, model))
