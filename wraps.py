@@ -460,26 +460,29 @@ def viz_model(model, modelName=0, targetSpan=0.5, defaultValue=1, ytitle="Relati
  else:
   fsf="graphs"
  
+ 
+ if "flink" in model:
+  viz.draw_cont_pdp(model["flink"], targetSpan, "Un-Flinked Prediction", model=modelName, defaultValue=defaultValue, ytitle=ytitle, folder=fsf)
  if "conts" in model:
   for col in model["conts"]:
-   viz.draw_cont_pdp(model["conts"][col], 0.5, col, model=modelName, defaultValue=defaultValue, ytitle=ytitle, folder=fsf)
+   viz.draw_cont_pdp(model["conts"][col], targetSpan, col, model=modelName, defaultValue=defaultValue, ytitle=ytitle, folder=fsf)
  if "cats" in model:
   for col in model["cats"]:
-   viz.draw_cat_pdp(model["cats"][col], 0.5, col, model=modelName, defaultValue=defaultValue, ytitle=ytitle, folder=fsf, otherName=otherName)
+   viz.draw_cat_pdp(model["cats"][col], targetSpan, col, model=modelName, defaultValue=defaultValue, ytitle=ytitle, folder=fsf, otherName=otherName)
  if "contconts" in model:
   for cols in model["contconts"]:
    c1, c2 = cols.split(" X ")
-   viz.draw_contcont_pdp(model["contconts"][cols], 0.5, cols, model=modelName, cont1=c1, cont2=c2, defaultValue=defaultValue, ytitle=ytitle, folder=fsf)
-   viz.draw_contcont_pdp_3D(model["contconts"][cols], 0.5, cols+", 3D", model=modelName, cont1=c1, defaultValue=defaultValue, cont2=c2, ytitle=ytitle, folder=fsf)
-   viz.draw_contcont_pdp_heatmap(model["contconts"][cols], 0.5, cols+", Heatmap", model=modelName, cont1=c1, defaultValue=defaultValue, cont2=c2, ytitle=ytitle, folder=fsf, detail=heatmapDetail)
+   viz.draw_contcont_pdp(model["contconts"][cols], targetSpan, cols, model=modelName, cont1=c1, cont2=c2, defaultValue=defaultValue, ytitle=ytitle, folder=fsf)
+   viz.draw_contcont_pdp_3D(model["contconts"][cols], targetSpan, cols+", 3D", model=modelName, cont1=c1, defaultValue=defaultValue, cont2=c2, ytitle=ytitle, folder=fsf)
+   viz.draw_contcont_pdp_heatmap(model["contconts"][cols], targetSpan, cols+", Heatmap", model=modelName, cont1=c1, defaultValue=defaultValue, cont2=c2, ytitle=ytitle, folder=fsf, detail=heatmapDetail)
  if "catconts" in model:
   for cols in model["catconts"]:
    c1, c2 = cols.split(" X ")
-   viz.draw_catcont_pdp(model["catconts"][cols], 0.5, cols, model=modelName, cat=c1, cont=c2, defaultValue=defaultValue, ytitle=ytitle, folder=fsf, otherName=otherName)
+   viz.draw_catcont_pdp(model["catconts"][cols], targetSpan, cols, model=modelName, cat=c1, cont=c2, defaultValue=defaultValue, ytitle=ytitle, folder=fsf, otherName=otherName)
  if "catcats" in model:
   for cols in model["catcats"]:
    c1, c2 = cols.split(" X ")
-   viz.draw_catcat_pdp(model["catcats"][cols], 0.5, cols, model=modelName, cat1=c1, cat2=c2, defaultValue=defaultValue, ytitle=ytitle, folder=fsf, otherName=otherName)
+   viz.draw_catcat_pdp(model["catcats"][cols], targetSpan, cols, model=modelName, cat1=c1, cat2=c2, defaultValue=defaultValue, ytitle=ytitle, folder=fsf, otherName=otherName)
 
 def viz_logistic_model(model, subfolder=None, targetSpan=0.5, otherName="OTHER"):
  viz_model(model, defaultValue=0, ytitle="LPUs", subfolder=subfolder, targetSpan=targetSpan, otherName=otherName)

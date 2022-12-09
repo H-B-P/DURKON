@@ -16,9 +16,12 @@ import prep
 #link, linkgrad are per pred; linkgrad is then per model
 #lossgrad is per df, then per pred
 
-def train_models(inputDfs, target, nrounds, lrs, startingModels, weightCol=None, staticFeats = [], lras=None, lossgrads=[[calculus.Gauss_grad]], links=[calculus.Unity_link], linkgrads=[[calculus.Unity_link_grad]], pens=None, minRela=None, prints="verbose"):
+def train_models(inputDfs, targets, nrounds, lrs, startingModels, weightCol=None, staticFeats = [], lras=None, lossgrads=[[calculus.Gauss_grad]], links=[calculus.Unity_link], linkgrads=[[calculus.Unity_link_grad]], pens=None, minRela=None, prints="verbose"):
  
  inputDfs = [df.reset_index() for df in inputDfs]
+ 
+ if type(targets)==type([1,2,3]):
+  targets=[targets]
  
  if lras==None:
   lras = [calculus.default_LRA]*len(startingModels)
@@ -165,7 +168,8 @@ def train_models(inputDfs, target, nrounds, lrs, startingModels, weightCol=None,
    
    linkgradients = [[linkgrad(*combs) for linkgrad in linkgradset] for linkgradset in linkgrads]
    preds = [link(*combs) for link in links]
-   lossgradients = [lossgrad(*preds,inputDf[target]) for lossgrad in lossgrads[d]]
+   tCols = [inputDf[target] for target in targets]
+   lossgradients = [lossgrad(*preds,*tCols) for lossgrad in lossgrads[d]]
    
    #print(lossgradients)
    
