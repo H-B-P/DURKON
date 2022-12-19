@@ -20,7 +20,7 @@ def train_models(inputDfs, targets, nrounds, lrs, startingModels, weightCol=None
  
  inputDfs = [df.reset_index() for df in inputDfs]
  
- if type(targets)==type([1,2,3]):
+ if type(targets)!=type([1,2,3]):
   targets=[targets]
  
  if lras==None:
