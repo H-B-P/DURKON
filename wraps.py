@@ -429,6 +429,66 @@ def train_cratio_models(inputDf, resp, nrounds, lrs, models, pens=None, weightCo
  models = actual_modelling.train_models([df], resp, nrounds, lrs, models, weightCol, staticFeats, lras=calculus.addsmoothing_LRAs, lossgrads=[[calculus.Logistic_grad]], links=[calculus.Cratio_mlink], linkgrads=[[calculus.Cratio_mlink_grad]*len(models)], pens=pens, minRela=minRela, prints=prints)
  return models
 
+def interxhunt_cratio_models(inputDf, resp, cats, conts, models, silent=False, weightCol=None, filename="suggestions"):
+ 
+ df = inputDf.reset_index(drop=True)
+ 
+ trialModelTemplate = []
+ 
+ for m in range(len(models)):
+  df["PredComb_"+str(m)]=misc.predict(df, models[m])
+  trialModelTemplate.append({"BASE_VALUE":1, "conts":{"PredComb_"+str(m):[[min(df["PredComb_"+str(m)]),min(df["PredComb_"+str(m)])],[max(df["PredComb_"+str(m)]),max(df["PredComb_"+str(m)])]]}, "featcomb":"mult"})
+ 
+ sugImps=[[] for m in range(len(models))]
+ sugFeats=[[] for m in range(len(models))]
+ sugTypes=[[] for m in range(len(models))]
+ 
+ for i in range(len(cats)):
+  for j in range(i+1, len(cats)):
+   if not silent:
+    print(cats[i] + " X " + cats[j])
+   
+   trialModels = copy.deepcopy(trialModelTemplate)
+   trialModels = [prep.add_catcat_to_model(trialModel, df, cats[i], cats[j], defaultValue=1) for trialModel in trialModels]
+   trialModels = train_cratio_models(df, resp, 1, [1]*len(models), trialModels, weightCol, staticFeats=["PredComb_"+str(m) for m in range(len(models))], prints="silent")
+   print(trialModels)
+   
+   for m in range(len(models)):
+    sugFeats[m].append(cats[i]+" X "+cats[j])
+    sugImps[m].append(misc.get_importance_of_this_catcat(df, trialModels[m], cats[i]+" X "+cats[j], defaultValue=0))
+    sugTypes[m].append("catcat")
+ 
+ for i in range(len(cats)):
+  for j in range(len(conts)):
+   if not silent:
+    print(cats[i] + " X " + conts[j])
+   
+   trialModels = copy.deepcopy(trialModelTemplate)
+   trialModels = [prep.add_catcont_to_model(trialModel, df, cats[i], conts[j], defaultValue=1) for trialModel in trialModels]
+   trialModels = train_cratio_models(df, resp, 1, [1]*len(models), trialModels, weightCol, staticFeats=["PredComb_"+str(m) for m in range(len(models))], prints="silent")
+   
+   for m in range(len(models)):
+    sugFeats[m].append(cats[i]+" X "+conts[j])
+    sugImps[m].append(misc.get_importance_of_this_catcont(df, trialModels[m], cats[i]+" X "+conts[j], defaultValue=0))
+    sugTypes[m].append("catcont")
+   
+ for i in range(len(conts)):
+  for j in range(i+1, len(conts)):
+   if not silent:
+    print(conts[i] + " X " + conts[j])
+   
+   trialModels = copy.deepcopy(trialModelTemplate)
+   trialModels = [prep.add_contcont_to_model(trialModel, df, conts[i], conts[j], defaultValue=1) for trialModel in trialModels]
+   trialModels = train_cratio_models(df, resp, 1, [1]*len(models), trialModels, weightCol, staticFeats=["PredComb_"+str(m) for m in range(len(models))], prints="silent")
+   
+   for m in range(len(models)):
+    sugFeats[m].append(conts[i]+" X "+conts[j])
+    sugImps[m].append(misc.get_importance_of_this_contcont(df, trialModels[m], conts[i]+" X "+conts[j], defaultValue=0))
+    sugTypes[m].append("contcont")
+
+
+
+
 
 def flinkify_additive_model(inputDf, model, contTargetPts=5, edge=0.0, weightCol=None):
  df = inputDf.reset_index(drop=True)
