@@ -249,9 +249,9 @@ def draw_contcont_pdp(contcont, targetSpan=0, name="graph", model=0, defaultValu
  
  if name!="graph":
   if (model==0):
-   fig.update_layout(title="PDP for "+name, xaxis_title=name, yaxis_title=ytitle)
+   fig.update_layout(title="PDP for "+name, xaxis_title=cont2, yaxis_title=ytitle)
   else:
-   fig.update_layout(title="PDP for "+name+", model "+model, xaxis_title=name, yaxis_title=ytitle)
+   fig.update_layout(title="PDP for "+name+", model "+model, xaxis_title=cont2, yaxis_title=ytitle)
  
  if (model==0):
   fig.write_image(folder+"/"+name+".png")
