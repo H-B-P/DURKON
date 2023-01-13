@@ -163,9 +163,9 @@ def draw_catcat_pdp(catcat, targetSpan=0, name="graph", model=0, defaultValue=1,
  
  if name!="graph":
   if (model==0):
-   fig.update_layout(title="PDP for "+name, xaxis_title=name, yaxis_title=ytitle)
+   fig.update_layout(title="PDP for "+name, xaxis_title=cat2, yaxis_title=ytitle)
   else:
-   fig.update_layout(title="PDP for "+name+", model "+model, xaxis_title=name, yaxis_title=ytitle)
+   fig.update_layout(title="PDP for "+name+", model "+model, xaxis_title=cat2, yaxis_title=ytitle)
  
  if (model==0):
   fig.write_image(folder+"/"+name+".png")
@@ -210,9 +210,9 @@ def draw_catcont_pdp(catcont, targetSpan=0, name="graph", model=0, defaultValue=
  
  if name!="graph":
   if (model==0):
-   fig.update_layout(title="PDP for "+name, xaxis_title=name, yaxis_title=ytitle)
+   fig.update_layout(title="PDP for "+name, yaxis_title=ytitle)
   else:
-   fig.update_layout(title="PDP for "+name+", model "+model, xaxis_title=name, yaxis_title=ytitle)
+   fig.update_layout(title="PDP for "+name+", model "+model, yaxis_title=ytitle)
  
  if (model==0):
   fig.write_image(folder+"/"+name+".png")
