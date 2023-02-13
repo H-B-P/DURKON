@@ -4,7 +4,7 @@ import math
 import scipy
 from scipy.special import erf
 
-from . import misc
+import misc
 
 #Easy objective functions
 
