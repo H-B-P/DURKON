@@ -3,7 +3,7 @@ import numpy as np
 import plotly.graph_objects as go
 import plotly
 
-from . import misc
+import misc
 
 def get_cont_pdp_prevalences(df, col, intervals=10, weightCol=None):
  cdf= df.copy()
