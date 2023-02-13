@@ -4,12 +4,12 @@ import math
 import copy
 import time
 
-from . import util
-from . import misc
-from . import calculus
-from . import pena
-from . import rele
-from . import prep
+import util
+import misc
+import calculus
+import pena
+import rele
+import prep
 
 #pens, lrs, staticFeatLists, specificPenses and models are per model
 #relelistlists are listed per df, then per model
