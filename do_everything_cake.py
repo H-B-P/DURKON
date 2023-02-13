@@ -1,12 +1,11 @@
 import pandas as pd
 import numpy as np
 
-from . import actual_modelling
-from . import prep
-from . import misc
-from . import calculus
-
-from . import wraps
+import actual_modelling
+import prep
+import misc
+import calculus
+import wraps
 
 trainDf = pd.read_csv("train.csv")
 
