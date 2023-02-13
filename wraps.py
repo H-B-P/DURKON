@@ -1,18 +1,210 @@
 import pandas as pd
 import numpy as np
 
-import actual_modelling
-import prep
-import misc
-import calculus
-
 import copy
-
-import viz
-
 import os
 
+from . import actual_modelling
+from . import prep
+from . import misc
+from . import calculus
+from . import viz
+
 ALPHABET="ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+def prep_model(inputDf, resp, cats, conts, catMinPrev=0.01, contTargetPts=5, edge=0.01, weightCol=None):
+ df = inputDf.reset_index(drop=True)
+ model = prep.prep_model(df, resp, cats, conts, catMinPrev, contTargetPts, edge, 1, weightCol)
+ return model
+
+
+def train_gamma_model(inputDf, resp, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal"):
+ df = inputDf.reset_index(drop=True)
+ model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, pen=pen, specificPens={}, lossgrad=calculus.Gamma_grad, prints=prints)
+ return model
+
+def train_poisson_model(inputDf, resp, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal"):
+ df = inputDf.reset_index(drop=True)
+ model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, pen=pen, specificPens={}, lossgrad=calculus.Poisson_grad, prints=prints)
+ return model
+
+def train_tweedie_model(inputDf, resp, nrounds, lr, model, pTweedie=1.5, pen=0, weightCol=None, staticFeats=[], prints="normal"):
+ df = inputDf.reset_index(drop=True)
+ Tweedie_grad = calculus.produce_Tweedie_grad(pTweedie) 
+ model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, pen=pen, specificPens={}, lossgrad=Tweedie_grad, prints=prints)
+ return model
+
+
+
+
+
+def interxhunt_gamma_model(inputDf, resp, cats, conts, model, silent=False, weightCol=None, filename="suggestions"):
+ 
+ df = inputDf.reset_index(drop=True)
+ 
+ df["PredComb"]=misc.predict(df,model)
+ 
+ sugImps=[]
+ sugFeats=[]
+ sugTypes=[]
+ 
+ for i in range(len(cats)):
+  for j in range(i+1, len(cats)):
+   trialmodel = {"BASE_VALUE":1, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}}
+   prep.add_catcat_to_model(trialmodel, df, cats[i], cats[j], defaultValue=1)
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=calculus.Gamma_grad, pen=0, prints="silent")
+   
+   if not silent:
+    print(cats[i]+" X "+cats[j], misc.get_importance_of_this_catcat(df, trialmodel, cats[i]+" X "+cats[j], defaultValue=1))
+   
+   sugFeats.append(cats[i]+" X "+cats[j])
+   sugImps.append(misc.get_importance_of_this_catcat(df, trialmodel, cats[i]+" X "+cats[j], defaultValue=1))
+   sugTypes.append("catcat")
+ 
+ for i in range(len(cats)):
+  for j in range(len(conts)):
+   trialmodel = {"BASE_VALUE":1, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}}
+   prep.add_catcont_to_model(trialmodel, df, cats[i], conts[j], defaultValue=1)
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=calculus.Gamma_grad, pen=0, prints="silent")
+   
+   if not silent:
+    print(cats[i]+" X "+conts[j],misc.get_importance_of_this_catcont(df, trialmodel, cats[i]+" X "+conts[j], defaultValue=1))
+   
+   sugFeats.append(cats[i]+" X "+conts[j])
+   sugImps.append(misc.get_importance_of_this_catcont(df, trialmodel, cats[i]+" X "+conts[j], defaultValue=1))
+   sugTypes.append("catcont")
+ 
+ for i in range(len(conts)):
+  for j in range(i+1, len(conts)):
+   trialmodel = {"BASE_VALUE":1, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}}
+   prep.add_contcont_to_model(trialmodel, df, conts[i], conts[j], defaultValue=1)
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=calculus.Gamma_grad, pen=0, prints="silent")
+   
+   if not silent:
+    print(conts[i]+" X "+conts[j], misc.get_importance_of_this_contcont(df, trialmodel, conts[i]+" X "+conts[j], defaultValue=1))
+   
+   sugFeats.append(conts[i]+" X "+conts[j])
+   sugImps.append(misc.get_importance_of_this_contcont(df, trialmodel, conts[i]+" X "+conts[j], defaultValue=1))
+   sugTypes.append("contcont")
+ 
+ sugDf = pd.DataFrame({"Interaction":sugFeats, "Type":sugTypes, "Importance":sugImps})
+ sugDf = sugDf.sort_values(['Importance'], ascending=False).reset_index()
+ sugDf.to_csv(filename+".csv")
+
+
+def interxhunt_poisson_model(inputDf, resp, cats, conts, model, silent=False, weightCol=None, filename="suggestions"):
+ 
+ df = inputDf.reset_index(drop=True)
+ 
+ df["PredComb"]=misc.predict(df,model)
+ 
+ sugImps=[]
+ sugFeats=[]
+ sugTypes=[]
+ 
+ for i in range(len(cats)):
+  for j in range(i+1, len(cats)):
+   trialmodel = {"BASE_VALUE":1, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}}
+   prep.add_catcat_to_model(trialmodel, df, cats[i], cats[j], defaultValue=1)
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=calculus.Poisson_grad, pen=0, prints="silent")
+   
+   if not silent:
+    print(cats[i]+" X "+cats[j], misc.get_importance_of_this_catcat(df, trialmodel, cats[i]+" X "+cats[j], defaultValue=1))
+   
+   sugFeats.append(cats[i]+" X "+cats[j])
+   sugImps.append(misc.get_importance_of_this_catcat(df, trialmodel, cats[i]+" X "+cats[j], defaultValue=1))
+   sugTypes.append("catcat")
+ 
+ for i in range(len(cats)):
+  for j in range(len(conts)):
+   trialmodel = {"BASE_VALUE":1, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}}
+   prep.add_catcont_to_model(trialmodel, df, cats[i], conts[j], defaultValue=1)
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=calculus.Poisson_grad, pen=0, prints="silent")
+   
+   if not silent:
+    print(cats[i]+" X "+conts[j],misc.get_importance_of_this_catcont(df, trialmodel, cats[i]+" X "+conts[j], defaultValue=1))
+   
+   sugFeats.append(cats[i]+" X "+conts[j])
+   sugImps.append(misc.get_importance_of_this_catcont(df, trialmodel, cats[i]+" X "+conts[j], defaultValue=1))
+   sugTypes.append("catcont")
+ 
+ for i in range(len(conts)):
+  for j in range(i+1, len(conts)):
+   trialmodel = {"BASE_VALUE":1, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}}
+   prep.add_contcont_to_model(trialmodel, df, conts[i], conts[j], defaultValue=1)
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=calculus.Poisson_grad, pen=0, prints="silent")
+   
+   if not silent:
+    print(conts[i]+" X "+conts[j], misc.get_importance_of_this_contcont(df, trialmodel, conts[i]+" X "+conts[j], defaultValue=1))
+   
+   sugFeats.append(conts[i]+" X "+conts[j])
+   sugImps.append(misc.get_importance_of_this_contcont(df, trialmodel, conts[i]+" X "+conts[j], defaultValue=1))
+   sugTypes.append("contcont")
+ 
+ sugDf = pd.DataFrame({"Interaction":sugFeats, "Type":sugTypes, "Importance":sugImps})
+ sugDf = sugDf.sort_values(['Importance'], ascending=False).reset_index()
+ sugDf.to_csv(filename+".csv")
+
+
+
+
+def interxhunt_tweedie_model(inputDf, resp, cats, conts, model, pTweedie=1.5, silent=False, weightCol=None, filename="suggestions"):
+ 
+ df = inputDf.reset_index(drop=True)
+ 
+ df["PredComb"]=misc.predict(df,model)
+ 
+ sugImps=[]
+ sugFeats=[]
+ sugTypes=[]
+ 
+ Tweedie_grad = calculus.produce_Tweedie_grad(pTweedie) 
+ 
+ for i in range(len(cats)):
+  for j in range(i+1, len(cats)):
+   trialmodel = {"BASE_VALUE":1, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}}
+   prep.add_catcat_to_model(trialmodel, df, cats[i], cats[j], defaultValue=1)
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=Tweedie_grad, pen=0, prints="silent")
+   
+   if not silent:
+    print(cats[i]+" X "+cats[j], misc.get_importance_of_this_catcat(df, trialmodel, cats[i]+" X "+cats[j], defaultValue=1))
+   
+   sugFeats.append(cats[i]+" X "+cats[j])
+   sugImps.append(misc.get_importance_of_this_catcat(df, trialmodel, cats[i]+" X "+cats[j], defaultValue=1))
+   sugTypes.append("catcat")
+ 
+ for i in range(len(cats)):
+  for j in range(len(conts)):
+   trialmodel = {"BASE_VALUE":1, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}}
+   prep.add_catcont_to_model(trialmodel, df, cats[i], conts[j], defaultValue=1)
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=Tweedie_grad, pen=0, prints="silent")
+   
+   if not silent:
+    print(cats[i]+" X "+conts[j],misc.get_importance_of_this_catcont(df, trialmodel, cats[i]+" X "+conts[j], defaultValue=1))
+   
+   sugFeats.append(cats[i]+" X "+conts[j])
+   sugImps.append(misc.get_importance_of_this_catcont(df, trialmodel, cats[i]+" X "+conts[j], defaultValue=1))
+   sugTypes.append("catcont")
+ 
+ for i in range(len(conts)):
+  for j in range(i+1, len(conts)):
+   trialmodel = {"BASE_VALUE":1, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}}
+   prep.add_contcont_to_model(trialmodel, df, conts[i], conts[j], defaultValue=1)
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=Tweedie_grad, pen=0, prints="silent")
+   
+   if not silent:
+    print(conts[i]+" X "+conts[j], misc.get_importance_of_this_contcont(df, trialmodel, conts[i]+" X "+conts[j], defaultValue=1))
+   
+   sugFeats.append(conts[i]+" X "+conts[j])
+   sugImps.append(misc.get_importance_of_this_contcont(df, trialmodel, conts[i]+" X "+conts[j], defaultValue=1))
+   sugTypes.append("contcont")
+ 
+ sugDf = pd.DataFrame({"Interaction":sugFeats, "Type":sugTypes, "Importance":sugImps})
+ sugDf = sugDf.sort_values(['Importance'], ascending=False).reset_index()
+ sugDf.to_csv(filename+".csv")
+
+
+
 
 def prep_gamma_models(inputDf, resp, cats, conts, N=1, fractions=None, catMinPrev=0.01, contTargetPts=5, edge=0.01, weightCol=None):
  df = inputDf.reset_index(drop=True)
@@ -190,6 +382,7 @@ def interxhunt_gnormal_models(inputDfs, resp, cats, conts, models, silent=False,
   sugDf = pd.DataFrame({"Interaction":sugFeats[m], "Type":sugTypes[m], "Importance":sugImps[m]})
   sugDf = sugDf.sort_values(['Importance'], ascending=False).reset_index()
   sugDf.to_csv(filename+"_"+ALPHABET[m]+".csv")
+
 
 def predict_from_gnormal(df, model):
  return misc.predict_models(df, model, calculus.Add_mlink_allbutlast)
@@ -564,6 +757,9 @@ def viz_gnormal_models(models, subfolder=None, targetSpan=0.5, otherName="OTHER"
 
 def viz_additive_model(model, subfolder=None, targetSpan=0.5, otherName="OTHER"):
  viz_model(model, defaultValue=0, ytitle="Delta", subfolder=subfolder, targetSpan=targetSpan, otherName=otherName)
+
+def viz_multiplicative_model(model, subfolder=None, targetSpan=0.5, otherName="OTHER"):
+ viz_model(model, defaultValue=1, ytitle="Multiplier", subfolder=subfolder, targetSpan=targetSpan, otherName=otherName)
 
 def viz_adjustment_model(model, subfolder=None, targetSpan=0.5, otherName="OTHER"):
  viz_model(model, ytitle="Adjustment multiplier", subfolder=subfolder, targetSpan=targetSpan, otherName=otherName)

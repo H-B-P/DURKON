@@ -4,7 +4,7 @@ import math
 import scipy
 from scipy.special import erf
 
-import misc
+from . import misc
 
 #Easy objective functions
 
@@ -19,6 +19,13 @@ def Gamma_grad(pred,act):
 
 def Logistic_grad(pred,act):
  return (pred-act)/(pred*(1-pred))
+
+#Tweedie
+
+def produce_Tweedie_grad(pTweedie=1.5):
+ def Tweedie_grad(pred,act):
+  return (pred-act)/(pred**pTweedie)
+ return Tweedie_grad
 
 #Easy linkages
 

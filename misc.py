@@ -7,10 +7,10 @@ import datetime
 import json
 import os
 
-import util
-import calculus
-import rele
-import prep
+from . import util
+from . import calculus
+from . import rele
+from . import prep
 
 
 def save_model(model, name="model", folder="models", timing=True):

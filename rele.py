@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
-import util
+
+from . import util
 
 def produce_cont_relevances(inputSeries, cont):
  reles=np.zeros((len(cont)+1,len(inputSeries)))

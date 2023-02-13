@@ -1,12 +1,11 @@
 import pandas as pd
 import numpy as np
 
-import actual_modelling
-import prep
-import misc
-import calculus
-
-import wraps
+from . import actual_modelling
+from . import prep
+from . import misc
+from . import calculus
+from . import wraps
 
 #Logistic Proof of Concept 
 
