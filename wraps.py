@@ -4,11 +4,11 @@ import numpy as np
 import copy
 import os
 
-from . import actual_modelling
-from . import prep
-from . import misc
-from . import calculus
-from . import viz
+import actual_modelling
+import prep
+import misc
+import calculus
+import viz
 
 ALPHABET="ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
