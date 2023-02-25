@@ -82,12 +82,12 @@ wraps.viz_gnormal_models(models, "Gnormal")
 
 model = wraps.prep_additive_model(df,'y',cats, conts)
 
-model = wraps.train_additive_model(df,'y', 50, 0.2, model)
+model = wraps.train_normal_model(df,'y', 50, 0.2, model)
 pred = misc.predict(df,model)
 
 print(pred)
 
-wraps.interxhunt_additive_model(df, 'y', cats, conts, model, filename="suggestions_additive")
+wraps.interxhunt_normal_model(df, 'y', cats, conts, model, filename="suggestions_additive")
 
 wraps.viz_additive_model(model, "Additive")
 
@@ -144,9 +144,9 @@ conts=["cont1","cont2", "cont3"]
 model = wraps.prep_additive_model(df,'y',cats, conts)
 
 #The intended workflow is as follows:
-model = wraps.train_additive_model(df,'y', 50, 0.2, model, pen=0.8)# First, train with high penalization . . .
+model = wraps.train_normal_model(df,'y', 50, 0.2, model, pen=0.8)# First, train with high penalization . . .
 model = misc.de_feat(model, 0) # . . . then, purge all features that LASSO pulled to the default . . . 
-model = wraps.train_additive_model(df,'y', 50, 0.2, model, pen=0) # . . . and re-train on remaining features with lower (or zero!) penalization.
+model = wraps.train_normal_model(df,'y', 50, 0.2, model, pen=0) # . . . and re-train on remaining features with lower (or zero!) penalization.
 
 #(NOTE #1: for a multiplicative model the middle line would be "misc.de_feat(model, 0)", as the default value there is 1.)
 #(NOTE #2: de_feat doesn't affect interactions because if you're using penalization to remove interaction effects then you have made poor life choices.)
@@ -199,11 +199,11 @@ wraps.viz_cratio_models(models, "Cratio")
 
 df = pd.DataFrame({"cont1":[0,1,0,1],"cat1":[0,0,1,1],"y":[0,1,1,4]})
 model = wraps.prep_additive_model(df, "y", ["cat1"], ["cont1"])
-model = wraps.train_additive_model(df, "y", 100, 0.1, model)
+model = wraps.train_normal_model(df, "y", 100, 0.1, model)
 print(model)
 print(misc.predict(df, model))
 model = wraps.flinkify_additive_model(df,model)
-model = wraps.train_additive_model(df, "y", 100, 0.1, model)
+model = wraps.train_normal_model(df, "y", 100, 0.1, model)
 print(model)
 print(misc.predict(df, model))
 wraps.viz_additive_model(model, "flink")

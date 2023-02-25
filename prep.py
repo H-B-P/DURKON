@@ -3,14 +3,14 @@ import numpy as np
 import math
 import copy
 
-def prep_model(df, resp, cats, conts, catMinPrev=0.01, contTargetPts=5, edge=0.01, defaultValue=1, weightCol=None):
+def prep_model(df, resp, cats, conts, catMinPrev=0.01, contTargetPts=5, contEdge=0.01, defaultValue=1, weightCol=None):
  
  model={"BASE_VALUE":df[resp].mean(), "featcomb":"mult"}
  
  for cat in cats:
   model = add_cat_to_model(model, df, cat, catMinPrev, defaultValue, weightCol)
  for cont in conts:
-  model = add_cont_to_model(model, df, cont, contTargetPts,edge, defaultValue, weightCol)
+  model = add_cont_to_model(model, df, cont, contTargetPts,contEdge, defaultValue, weightCol)
  
  return model
 
@@ -42,7 +42,7 @@ def add_cat_to_model(model, df, cat, catMinPrev=0.01, defaultValue=1, weightCol=
 
 
 
-def get_cont_feat(df, cont, contTargetPts=5, edge=0.01, defaultValue=1, weightCol=None):
+def get_cont_feat(df, cont, contTargetPts=5, contEdge=0.01, defaultValue=1, weightCol=None):
  
  if weightCol==None:
   df["WEIGHT_COL"]=1
@@ -55,7 +55,7 @@ def get_cont_feat(df, cont, contTargetPts=5, edge=0.01, defaultValue=1, weightCo
  
  inpts = []
  for i in range(contTargetPts):
-  inpts.append(edge+(1-edge*2)*i/(contTargetPts-1))
+  inpts.append(contEdge+(1-contEdge*2)*i/(contTargetPts-1))
  
  df = df.sort_values(by=cont).reset_index()
  df["CSWC"]=df["WEIGHT_COL"].cumsum() - df["WEIGHT_COL"][0]
@@ -73,31 +73,31 @@ def get_cont_feat(df, cont, contTargetPts=5, edge=0.01, defaultValue=1, weightCo
  
  return feat
 
-def add_cont_to_model(model, df, cont, contTargetPts=5, edge=0.01, defaultValue=1, weightCol=None):
+def add_cont_to_model(model, df, cont, contTargetPts=5, contEdge=0.01, defaultValue=1, weightCol=None):
 
  if "conts" not in model:
   model["conts"]={}
- model['conts'][cont] = get_cont_feat(df,cont,contTargetPts, edge, defaultValue, weightCol)
+ model['conts'][cont] = get_cont_feat(df,cont,contTargetPts, contEdge, defaultValue, weightCol)
  
  return model
 
 
 
-def get_contcont_feat(df, cont1, cont2, contTargetPts1=3, contTargetPts2=3, edge1=0.05, edge2=0.05, defaultValue=1, weightCol=None):
+def get_contcont_feat(df, cont1, cont2, contTargetPts1=3, contTargetPts2=3, contEdge1=0.05, contEdge2=0.05, defaultValue=1, weightCol=None):
  
- feat1 = get_cont_feat(df, cont1, contTargetPts1, edge1, defaultValue, weightCol)
- feat2 = get_cont_feat(df, cont2, contTargetPts2, edge2, defaultValue, weightCol)
+ feat1 = get_cont_feat(df, cont1, contTargetPts1, contEdge1, defaultValue, weightCol)
+ feat2 = get_cont_feat(df, cont2, contTargetPts2, contEdge2, defaultValue, weightCol)
  
  for i in range(len(feat1)):
   feat1[i][1]=copy.deepcopy(feat2)
  
  return feat1
 
-def add_contcont_to_model(model, df, cont1, cont2, contTargetPts1=3, contTargetPts2=3, edge1=0.05, edge2=0.05, defaultValue=1, weightCol=None, replace=False):
+def add_contcont_to_model(model, df, cont1, cont2, contTargetPts1=3, contTargetPts2=3, contEdge1=0.05, contEdge2=0.05, defaultValue=1, weightCol=None, replace=False):
  
  if "contconts" not in model:
   model["contconts"]={}
- model['contconts'][cont1 + " X " + cont2] = get_contcont_feat(df, cont1, cont2, contTargetPts1, contTargetPts2, edge1, edge2, defaultValue, weightCol)
+ model['contconts'][cont1 + " X " + cont2] = get_contcont_feat(df, cont1, cont2, contTargetPts1, contTargetPts2, contEdge1, contEdge2, defaultValue, weightCol)
  
  if replace:
   if "conts" in model:
@@ -110,10 +110,10 @@ def add_contcont_to_model(model, df, cont1, cont2, contTargetPts1=3, contTargetP
 
 
 
-def get_catcont_feat(df, cat, cont, catMinPrev=0.1, contTargetPts=3, edge=0.05, defaultValue=1, weightCol=None):
+def get_catcont_feat(df, cat, cont, catMinPrev=0.1, contTargetPts=3, contEdge=0.05, defaultValue=1, weightCol=None):
  
  feat1 = get_cat_feat(df, cat, catMinPrev, defaultValue, weightCol)
- feat2 = get_cont_feat(df, cont, contTargetPts, edge, defaultValue, weightCol)
+ feat2 = get_cont_feat(df, cont, contTargetPts, contEdge, defaultValue, weightCol)
  
  feat1["OTHER"]=copy.deepcopy(feat2)
  
@@ -122,11 +122,11 @@ def get_catcont_feat(df, cat, cont, catMinPrev=0.1, contTargetPts=3, edge=0.05, 
  
  return feat1
 
-def add_catcont_to_model(model, df, cat, cont, catMinPrev=0.1, contTargetPts=3, edge=0.05, defaultValue=1, weightCol=None, replace=False):
+def add_catcont_to_model(model, df, cat, cont, catMinPrev=0.1, contTargetPts=3, contEdge=0.05, defaultValue=1, weightCol=None, replace=False):
  
  if "catconts" not in model:
   model["catconts"]={}
- model['catconts'][cat + " X " + cont] = get_catcont_feat(df, cat, cont, catMinPrev, contTargetPts, edge, defaultValue, weightCol)
+ model['catconts'][cat + " X " + cont] = get_catcont_feat(df, cat, cont, catMinPrev, contTargetPts, contEdge, defaultValue, weightCol)
  
  if replace:
   if "cats" in model:

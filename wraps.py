@@ -12,9 +12,9 @@ import viz
 
 ALPHABET="ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-def prep_model(inputDf, resp, cats, conts, catMinPrev=0.01, contTargetPts=5, edge=0.01, weightCol=None):
+def prep_model(inputDf, resp, cats, conts, catMinPrev=0.01, contTargetPts=5, contEdge=0.01, weightCol=None):
  df = inputDf.reset_index(drop=True)
- model = prep.prep_model(df, resp, cats, conts, catMinPrev, contTargetPts, edge, 1, weightCol)
+ model = prep.prep_model(df, resp, cats, conts, catMinPrev, contTargetPts, contEdge, 1, weightCol)
  return model
 
 
@@ -206,14 +206,14 @@ def interxhunt_tweedie_model(inputDf, resp, cats, conts, model, pTweedie=1.5, si
 
 
 
-def prep_gamma_models(inputDf, resp, cats, conts, N=1, fractions=None, catMinPrev=0.01, contTargetPts=5, edge=0.01, weightCol=None):
+def prep_gamma_models(inputDf, resp, cats, conts, N=1, fractions=None, catMinPrev=0.01, contTargetPts=5, contEdge=0.01, weightCol=None):
  df = inputDf.reset_index(drop=True)
  if fractions==None:
   denom = N*(N+1)/2
   fractions = [(N-x)/denom for x in range(N)]
  models = []
  for fraction in fractions:
-  model = prep.prep_model(df, resp, cats, conts, catMinPrev, contTargetPts, edge, 1, weightCol)
+  model = prep.prep_model(df, resp, cats, conts, catMinPrev, contTargetPts, contEdge, 1, weightCol)
   model["BASE_VALUE"]*=fraction
   models.append(model)
  return models
@@ -288,11 +288,11 @@ def interxhunt_gamma_models(inputDf, resp, cats, conts, models, silent=False, we
   sugDf.to_csv(filename+"_"+ALPHABET[m]+".csv")
   
 
-def gnormalize_gamma_models(models, inputDf, resp, cats, conts, startingErrorPercent=20, catMinPrev=0.01, contTargetPts=5, edge=0.01, weightCol=None):
+def gnormalize_gamma_models(models, inputDf, resp, cats, conts, startingErrorPercent=20, catMinPrev=0.01, contTargetPts=5, contEdge=0.01, weightCol=None):
  
  df = inputDf.reset_index(drop=True)
  
- errModel = prep.prep_model(df, resp, cats, conts, catMinPrev, contTargetPts, edge, 1, weightCol)
+ errModel = prep.prep_model(df, resp, cats, conts, catMinPrev, contTargetPts, contEdge, 1, weightCol)
  errModel["BASE_VALUE"]=startingErrorPercent*1.25/100
  models.append(errModel)
  return models
@@ -391,18 +391,18 @@ def predict_error_from_gnormal(df, model):
  return misc.predict_models(df, model, calculus.Add_mlink_onlylast)*100/1.25
 
 
-def prep_additive_model(inputDf, resp, cats, conts, catMinPrev=0.01, contTargetPts=5, edge=0.01, weightCol=None):
+def prep_additive_model(inputDf, resp, cats, conts, catMinPrev=0.01, contTargetPts=5, contEdge=0.01, weightCol=None):
  df = inputDf.reset_index(drop=True)
- model = prep.prep_model(df, resp, cats, conts, catMinPrev, contTargetPts, edge, 0, weightCol)
+ model = prep.prep_model(df, resp, cats, conts, catMinPrev, contTargetPts, contEdge, 0, weightCol)
  model["featcomb"] = "addl"
  return model
 
-def train_additive_model(inputDf, resp, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal"):
+def train_normal_model(inputDf, resp, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal"):
  df = inputDf.reset_index(drop=True)
  model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, pen=pen, specificPens={}, lossgrad=calculus.Gauss_grad, prints=prints)
  return model
 
-def interxhunt_additive_model(inputDf, resp, cats, conts, model, silent=False, weightCol=None, filename="suggestions"):
+def interxhunt_normal_model(inputDf, resp, cats, conts, model, silent=False, weightCol=None, filename="suggestions"):
  
  df = inputDf.reset_index(drop=True)
  
@@ -456,11 +456,11 @@ def interxhunt_additive_model(inputDf, resp, cats, conts, model, silent=False, w
  sugDf.to_csv(filename+".csv")
 
 
-def prep_classifier_model(inputDf, resp, cats, conts, catMinPrev=0.01, contTargetPts=5, edge=0.01, weightCol=None):
+def prep_classifier_model(inputDf, resp, cats, conts, catMinPrev=0.01, contTargetPts=5, contEdge=0.01, weightCol=None):
  
  df = inputDf.reset_index(drop=True)
  
- model = prep.prep_model(df, resp, cats, conts, catMinPrev, contTargetPts, edge, 0, weightCol)
+ model = prep.prep_model(df, resp, cats, conts, catMinPrev, contTargetPts, contEdge, 0, weightCol)
  model["BASE_VALUE"] = calculus.Logit_delink(model["BASE_VALUE"])
  model["featcomb"] = "addl"
  return model
@@ -528,11 +528,11 @@ def interxhunt_classifier_model(inputDf, resp, cats, conts, model, silent=False,
 
 
 
-def prep_adjustment_model(inputDf, resp, startingPoint, cats, conts, catMinPrev=0.01, contTargetPts=5, edge=0.01, weightCol=None):
+def prep_adjustment_model(inputDf, resp, startingPoint, cats, conts, catMinPrev=0.01, contTargetPts=5, contEdge=0.01, weightCol=None):
  
  df = inputDf.reset_index(drop=True)
  
- model = prep.prep_model(df, resp, cats, conts, catMinPrev, contTargetPts, edge, 1, weightCol)
+ model = prep.prep_model(df, resp, cats, conts, catMinPrev, contTargetPts, contEdge, 1, weightCol)
  model["BASE_VALUE"]=1
  model["featcomb"]="mult"
  if "conts" not in model:
@@ -604,14 +604,14 @@ def interxhunt_adjustment_model(inputDf, resp, cats, conts, model, silent=False,
 
 
 
-def prep_cratio_models(inputDf, resp, cats, conts, N=1, fractions=None, catMinPrev=0.01, contTargetPts=5, edge=0.01, weightCol=None):
+def prep_cratio_models(inputDf, resp, cats, conts, N=1, fractions=None, catMinPrev=0.01, contTargetPts=5, contEdge=0.01, weightCol=None):
  df = inputDf.reset_index(drop=True)
  if fractions==None:
   denom = N*(N+1)/2
   fractions = [(N-x)/denom for x in range(N)]
  models = []
  for fraction in fractions:
-  model = prep.prep_model(df, resp, cats, conts, catMinPrev, contTargetPts, edge, 1, weightCol)
+  model = prep.prep_model(df, resp, cats, conts, catMinPrev, contTargetPts, contEdge, 1, weightCol)
   model["BASE_VALUE"] = misc.frac_to_ratio(model["BASE_VALUE"])
   model["BASE_VALUE"]*=fraction
   models.append(model)
@@ -683,16 +683,16 @@ def interxhunt_cratio_models(inputDf, resp, cats, conts, models, silent=False, w
 
 
 
-def flinkify_additive_model(inputDf, model, contTargetPts=5, edge=0.0, weightCol=None):
+def flinkify_additive_model(inputDf, model, contTargetPts=5, contEdge=0.0, weightCol=None):
  df = inputDf.reset_index(drop=True)
  df["preds"] = misc.predict(df, model)
- model["flink"] = prep.get_cont_feat(df, "preds",contTargetPts, edge, 0, weightCol=weightCol)
+ model["flink"] = prep.get_cont_feat(df, "preds",contTargetPts, contEdge, 0, weightCol=weightCol)
  return model
  
-def flinkify_multiplicative_model(inputDf, model, contTargetPts=5, edge=0.0, weightCol=None):
+def flinkify_multiplicative_model(inputDf, model, contTargetPts=5, contEdge=0.0, weightCol=None):
  df = inputDf.reset_index(drop=True)
  df["preds"] = misc.predict(df, model)
- model["flink"] = prep.get_cont_feat(df, "preds",contTargetPts, edge, 1, weightCol=weightCol)
+ model["flink"] = prep.get_cont_feat(df, "preds",contTargetPts, contEdge, 1, weightCol=weightCol)
  return model
 
 
