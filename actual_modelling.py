@@ -334,7 +334,7 @@ def train_models(inputDfs, targets, nrounds, lrs, startingModels, weightCol=None
   return models, history
  return models
 
-def train_model(inputDf, target, nrounds, lr, startingModel, weight=None, staticFeats = [], pen=0, specificPens={}, lossgrad=calculus.Poisson_grad, link=calculus.Unity_link, linkgrad=calculus.Unity_link_grad, minRela=None, prints="verbose", record=False):
+def train_model(inputDf, target, nrounds, lr, startingModel, weightCol=None, staticFeats = [], pen=0, specificPens={}, lossgrad=calculus.Poisson_grad, link=calculus.Unity_link, linkgrad=calculus.Unity_link_grad, minRela=None, prints="verbose", record=False):
  
  history=[]
  
@@ -345,8 +345,10 @@ def train_model(inputDf, target, nrounds, lr, startingModel, weight=None, static
  if prints!="silent":
   print("initial weights and relevances setup")
  
- if weight==None:
+ if weightCol==None:
   weight = np.ones(len(inputDf))
+ else:
+  weight = inputDf[weightCol]
  w = np.array(np.transpose(np.matrix(weight)))
  
  cord = rele.produce_cont_relevances_dict(inputDf,model) #d(feat)/d(pt)
