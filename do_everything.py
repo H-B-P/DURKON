@@ -7,6 +7,18 @@ import misc
 import calculus
 import wraps
 
+#Weighted Poisson proof of concept
+
+df = pd.DataFrame({"cont1":[1,2,3,4,1,2,3,4], "cont2":[1,2,3,4,5,4,3,4], "cat1":['a','a','a','a','b','b','b','a'], "cat2":['c','c','d','d','c','d','e','d'], "exposure":[1,2,1,2,1,2,1,2], "y":[1,2,3,4,5,6,7,8]})
+
+cats = ["cat1", "cat2"]
+conts = ["cont1", "cont2"]
+
+model = wraps.prep_model(df, "y", cats, conts)
+model = wraps.train_poisson_model(df, 'y', 50, 0.2, model, weightCol="exposure")
+
+assert("Pepsi"=="Coke")
+
 #Logistic Proof of Concept 
 
 df = pd.DataFrame({"cont1":[1,2,3,4,1,2,3,4], "cont2":[1,2,3,4,5,4,3,2], "cat1":['a','a','a','a','b','b','b','b'], "cat2":['c','c','d','d','c','d','e','d'], "y":[0,0,0,1,0,0,0,1]})
