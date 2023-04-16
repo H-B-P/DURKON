@@ -58,13 +58,13 @@ def get_cont_feat(df, cont, contTargetPts=5, contEdge=0.01, defaultValue=1, weig
   inpts.append(contEdge+(1-contEdge*2)*i/(contTargetPts-1))
  
  df = df.sort_values(by=cont).reset_index()
- df["CSWC"]=df["WEIGHT_COL"].cumsum() - df["WEIGHT_COL"][0]
+ df["CSWC"]=df["WEIGHT_COL"].cumsum()
  
  pts=[]
  feat=[]
  
  for inpt in inpts:
-  newpt = max(df[df["CSWC"]<=(inpt*sw)][cont])
+  newpt = min(df[df["CSWC"]>=(inpt*sw)][cont])
   if newpt not in pts:
    pts.append(newpt)
  
