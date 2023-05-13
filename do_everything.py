@@ -17,8 +17,6 @@ conts = ["cont1", "cont2"]
 model = wraps.prep_model(df, "y", cats, conts)
 model = wraps.train_poisson_model(df, 'y', 50, 0.2, model, weightCol="exposure")
 
-assert("Pepsi"=="Coke")
-
 #Logistic Proof of Concept 
 
 df = pd.DataFrame({"cont1":[1,2,3,4,1,2,3,4], "cont2":[1,2,3,4,5,4,3,2], "cat1":['a','a','a','a','b','b','b','b'], "cat2":['c','c','d','d','c','d','e','d'], "y":[0,0,0,1,0,0,0,1]})
@@ -160,7 +158,7 @@ model = wraps.train_normal_model(df,'y', 50, 0.2, model, pen=0.8)# First, train 
 model = misc.de_feat(model, 0) # . . . then, purge all features that LASSO pulled to the default . . . 
 model = wraps.train_normal_model(df,'y', 50, 0.2, model, pen=0) # . . . and re-train on remaining features with lower (or zero!) penalization.
 
-#(NOTE #1: for a multiplicative model the middle line would be "misc.de_feat(model, 0)", as the default value there is 1.)
+#(NOTE #1: for a multiplicative model the middle line would be "misc.de_feat(model, 1)", as the default value there is 1.)
 #(NOTE #2: de_feat doesn't affect interactions because if you're using penalization to remove interaction effects then you have made poor life choices.)
 
 print(model)
