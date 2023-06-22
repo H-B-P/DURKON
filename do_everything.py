@@ -64,6 +64,21 @@ pred = misc.predict(df, models)
 
 print(pred1, pred2, pred)
 
+
+# models = wraps.prep_gamma_models(df, 'y', cats, conts, 1)
+# models = wraps.train_gamma_models(df, 'y', 50, [0.2], models)
+
+# pred = misc.predict(df, models)
+# print(pred)
+# print(models)
+
+# models[0] = wraps.flinkify_multiplicative_model(df, models[0])
+# models = wraps.train_gamma_models(df, 'y', 50, [0.2], models)
+
+# pred = misc.predict(df, models)
+# print(pred)
+# print(models)
+
 wraps.interxhunt_gamma_models(df, "y", cats, conts, models, filename="suggestions_gamma")
 
 models[0] = prep.add_catcont_to_model(models[0], df, 'cat1','cont1')
@@ -103,11 +118,21 @@ print(models)
 models = wraps.gnormalize_gamma_models(models, udf, "y", cats, conts, 20)
 models = wraps.train_gnormal_models([udf,cdf], 'y', 1000, [0.1,0.005], models)
 
+if False:
+ models[0] = wraps.flinkify_multiplicative_model(df, models[0])
+ models = wraps.train_gnormal_models([udf,cdf], 'y', 1000, [0.01,0.005], models)
+
 pred = wraps.predict_from_gnormal(df, models)
 predErrPct = wraps.predict_error_from_gnormal(df, models)
 
 df["PREDICTED"]=pred
 
+print(df[["PREDICTED","true_y"]])
+
+print(df["PREDICTED"].mean())
+print(df["true_y"].mean())
+
+print(models)
 
 wraps.viz_gnormal_models(models, "Tobit")
 
@@ -243,3 +268,5 @@ model = wraps.train_normal_model(df, "y", 100, 0.1, model)
 print(model)
 print(misc.predict(df, model))
 wraps.viz_additive_model(model, "flink")
+
+#Flink also works for multiples, in both senses of the word!

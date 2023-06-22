@@ -47,12 +47,16 @@ def train_models(inputDfs, targets, nrounds, lrs, startingModels, weightCol=None
  interWReleDictListList = []
  totInterWReleDictListList = []
  
+ ws=[]
+ 
  for inputDf in inputDfs:
   if weightCol==None:
    weight = np.ones(len(inputDf))
   else:
    weight = inputDf[weightCol]
   w = np.array(np.transpose(np.matrix(weight)))
+  
+  ws.append(w)
   
   contReleDictList = []
   catReleDictList = []
@@ -139,6 +143,7 @@ def train_models(inputDfs, targets, nrounds, lrs, startingModels, weightCol=None
    catEffectsList = []
    interxEffectsList = []
    
+   preFlinkCombs=[]
    combs = []
    
    for m in range(len(models)):
@@ -158,6 +163,17 @@ def train_models(inputDfs, targets, nrounds, lrs, startingModels, weightCol=None
     else:
      comb = misc.comb_from_effects_mult(oModel["BASE_VALUE"], len(inputDf), contEffects, catEffects, interxEffects)
     
+    if "flink" in oModel:
+     flinkEffect = misc.get_effect_of_this_cont_col(comb, oModel["flink"])
+     preFlinkComb = comb
+     if oModel['featcomb']=="addl":
+      comb = comb+flinkEffect
+     else:
+      comb = comb*flinkEffect
+     preFlinkCombs.append(preFlinkComb)
+    else:
+     preFlinkCombs.append({})
+    
     combs.append(comb)
    
    #linkgradients = [[misc.lambdapply(linkgrad, combs) for linkgrad in linkgradset] for linkgradset in linkgrads]
@@ -167,6 +183,7 @@ def train_models(inputDfs, targets, nrounds, lrs, startingModels, weightCol=None
    #print("linkg", linkgradients)
    #print('p', preds)
    #print("lossg", lossgradients)
+   
    
    linkgradients = [[linkgrad(*combs) for linkgrad in linkgradset] for linkgradset in linkgrads]
    preds = [link(*combs) for link in links]
@@ -191,6 +208,24 @@ def train_models(inputDfs, targets, nrounds, lrs, startingModels, weightCol=None
      lossgradient = lossgradients[p]
      
      if type(linkgradient)==type(pd.Series([])):
+      
+      if "flink" in model:
+       if prints=="verbose":
+        print("adjust flink")
+       
+       flinkRele = rele.produce_cont_relevances(preFlinkCombs[m], model["flink"])#Has to be reproduced every turn because the dist changes over time (it better!)
+       
+       if model["featcomb"]=="addl":
+        finalGradients = np.matmul(np.array(lossgradient*linkgradient),ws[d]*flinkRele)#d(Loss)/d(pt) = d(Loss)/d(pred) * d(pred)/d(comb) * d(comb)/d(pt)
+       else:
+        finalGradients = np.matmul(np.array(lossgradient*linkgradient*preFlinkCombs[m]),ws[d]*flinkRele) #d(Loss)/d(pt) = d(Loss)/d(pred) * d(pred)/d(comb)* d(comb)/d(feat) * d(feat)/d(pt)
+       
+       
+       totReles = rele.sum_and_listify_matrix(ws[d]*flinkRele)
+       for k in range(len(model['flink'])):
+        totRele = totReles[k]
+        if totRele!=0:
+         model["flink"][k][1] -= finalGradients[k]*lrs[m]/totRele
       
       if "conts" in model:
        if prints=="verbose":
