@@ -86,6 +86,32 @@ wraps.interxhunt_gnormal_models(df,'y',cats,conts,models, filename="suggestions_
 
 wraps.viz_gnormal_models(models, "Gnormal")
 
+#Tobit proof of concept
+
+df = pd.read_csv('gnormal.csv')
+cdf = df[df['censored']].reset_index()
+udf = df[~df['censored']].reset_index()
+
+cats=[]
+conts=["x"]
+
+models = wraps.prep_gamma_models(udf, 'y', cats, conts, 1)
+models = wraps.train_gamma_models(udf, 'y', 1000, [0.1], models)
+
+print(models)
+
+models = wraps.gnormalize_gamma_models(models, udf, "y", cats, conts, 20)
+models = wraps.train_gnormal_models([udf,cdf], 'y', 1000, [0.1,0.005], models)
+
+pred = wraps.predict_from_gnormal(df, models)
+predErrPct = wraps.predict_error_from_gnormal(df, models)
+
+df["PREDICTED"]=pred
+
+
+wraps.viz_gnormal_models(models, "Tobit")
+
+assert(False)
 #---
 
 #Additive Proof of Concept
