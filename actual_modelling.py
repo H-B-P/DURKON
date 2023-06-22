@@ -153,7 +153,7 @@ def train_models(inputDfs, targets, nrounds, lrs, startingModels, weightCol=None
     catEffectsList.append(catEffects)
     interxEffectsList.append(interxEffects)
     
-    if model['featcomb']=="addl":
+    if oModel['featcomb']=="addl":
      comb = misc.comb_from_effects_addl(oModel["BASE_VALUE"], len(inputDf), contEffects, catEffects, interxEffects)
     else:
      comb = misc.comb_from_effects_mult(oModel["BASE_VALUE"], len(inputDf), contEffects, catEffects, interxEffects)
