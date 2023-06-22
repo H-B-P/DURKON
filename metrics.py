@@ -46,7 +46,7 @@ def get_weighted_MPE(df, predCol, actCol, weightCol): #Yes, I know the standard 
 
 def get_weighted_RMSPE(df, predCol, actCol, weightCol): 
  PE = 100*(df[predCol]-df[actCol])/df[predCol]
- return math.sqrt((PE*PE*df[weightCol]).sum()/sum(weightCol))
+ return math.sqrt((PE*PE*df[weightCol]).sum()/sum(df[weightCol]))
 
 def get_MAE(df, predCol, actCol):
  df["w8"] = 1
