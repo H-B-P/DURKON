@@ -136,7 +136,6 @@ print(models)
 
 wraps.viz_gnormal_models(models, "Tobit")
 
-assert(False)
 #---
 
 #Additive Proof of Concept
