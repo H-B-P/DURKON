@@ -55,6 +55,36 @@ df = pd.DataFrame({"cont1":[1,2,3,4,1,2,3,4], "cont2":[1,2,3,4,5,4,3,4], "cat1":
 cats = ["cat1", "cat2"]
 conts = ["cont1", "cont2"]
 
+model = wraps.prep_model(df,"y",cats,conts)
+model = wraps.train_gamma_model(df,"y",50, 0.01, model)
+wraps.interxhunt_gamma_model(df, "y", cats, conts, model)
+
+model = prep.add_catcont_to_model(model, df, 'cat1','cont1')
+model = prep.add_catcat_to_model(model, df, 'cat1', 'cat2')
+model = prep.add_contcont_to_model(model, df, 'cont1', 'cont2')
+
+#Tweedie Proof of Concept
+
+df = pd.DataFrame({"cont1":[1,2,3,4,1,2,3,4], "cont2":[1,2,3,4,5,4,3,4], "cat1":['a','a','a','a','b','b','b','a'], "cat2":['c','c','d','d','c','d','e','d'], "y":[1,2,3,4,5,6,7,8]})
+
+cats = ["cat1", "cat2"]
+conts = ["cont1", "cont2"]
+
+model = wraps.prep_model(df,"y",cats,conts)
+model = wraps.train_tweedie_model(df,"y",50, 0.01, model)
+wraps.interxhunt_tweedie_model(df, "y", cats, conts, model)
+
+model = prep.add_catcont_to_model(model, df, 'cat1','cont1')
+model = prep.add_catcat_to_model(model, df, 'cat1', 'cat2')
+model = prep.add_contcont_to_model(model, df, 'cont1', 'cont2')
+
+#Multimodel Proof of Concept
+
+df = pd.DataFrame({"cont1":[1,2,3,4,1,2,3,4], "cont2":[1,2,3,4,5,4,3,4], "cat1":['a','a','a','a','b','b','b','a'], "cat2":['c','c','d','d','c','d','e','d'], "y":[1,2,3,4,5,6,7,8]})
+
+cats = ["cat1", "cat2"]
+conts = ["cont1", "cont2"]
+
 models = wraps.prep_gamma_models(df, 'y', cats, conts, 2)
 models = wraps.train_gamma_models(df, 'y', 50, [0.2,0.3], models)
 
@@ -63,21 +93,6 @@ pred2 = misc.predict(df, models[1])
 pred = misc.predict(df, models)
 
 print(pred1, pred2, pred)
-
-
-# models = wraps.prep_gamma_models(df, 'y', cats, conts, 1)
-# models = wraps.train_gamma_models(df, 'y', 50, [0.2], models)
-
-# pred = misc.predict(df, models)
-# print(pred)
-# print(models)
-
-# models[0] = wraps.flinkify_multiplicative_model(df, models[0])
-# models = wraps.train_gamma_models(df, 'y', 50, [0.2], models)
-
-# pred = misc.predict(df, models)
-# print(pred)
-# print(models)
 
 wraps.interxhunt_gamma_models(df, "y", cats, conts, models, filename="suggestions_gamma")
 
@@ -118,10 +133,6 @@ print(models)
 models = wraps.gnormalize_gamma_models(models, udf, "y", cats, conts, 20)
 models = wraps.train_gnormal_models([udf,cdf], 'y', 1000, [0.1,0.005], models)
 
-if False:
- models[0] = wraps.flinkify_multiplicative_model(df, models[0])
- models = wraps.train_gnormal_models([udf,cdf], 'y', 1000, [0.01,0.005], models)
-
 pred = wraps.predict_from_gnormal(df, models)
 predErrPct = wraps.predict_error_from_gnormal(df, models)
 
@@ -139,6 +150,11 @@ wraps.viz_gnormal_models(models, "Tobit")
 #---
 
 #Additive Proof of Concept
+
+df = pd.DataFrame({"cont1":[1,2,3,4,1,2,3,4], "cont2":[1,2,3,4,5,4,3,4], "cat1":['a','a','a','a','b','b','b','a'], "cat2":['c','c','d','d','c','d','e','d'], "y":[1,2,3,4,5,6,7,8]})
+
+cats = ["cat1", "cat2"]
+conts = ["cont1", "cont2"]
 
 model = wraps.prep_additive_model(df,'y',cats, conts)
 

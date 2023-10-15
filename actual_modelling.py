@@ -377,6 +377,9 @@ def train_model(inputDf, target, nrounds, lr, startingModel, weightCol=None, sta
  
  model = copy.deepcopy(startingModel)
  
+ if "featcomb" not in model:
+  model["featcomb"]="mult"
+ 
  if prints!="silent":
   print("initial weights and relevances setup")
  

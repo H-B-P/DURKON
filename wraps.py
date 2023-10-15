@@ -17,6 +17,9 @@ def prep_model(inputDf, resp, cats, conts, catMinPrev=0.01, contTargetPts=5, con
  model = prep.prep_model(df, resp, cats, conts, catMinPrev, contTargetPts, contEdge, 1, weightCol)
  return model
 
+def prep_multiplicative_model(inputDf, resp, cats, conts, catMinPrev=0.01, contTargetPts=5, contEdge=0.01, weightCol=None):
+ return prep_model(inputDf, resp, cats, conts, catMinPrev=0.01, contTargetPts=5, contEdge=0.01, weightCol=None)
+
 
 def train_gamma_model(inputDf, resp, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal"):
  df = inputDf.reset_index(drop=True)

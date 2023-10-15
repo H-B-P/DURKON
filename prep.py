@@ -5,7 +5,10 @@ import copy
 
 def prep_model(df, resp, cats, conts, catMinPrev=0.01, contTargetPts=5, contEdge=0.01, defaultValue=1, weightCol=None):
  
- model={"BASE_VALUE":df[resp].mean(), "featcomb":"mult"}
+ if weightCol==None:
+  model={"BASE_VALUE":df[resp].mean(), "featcomb":"mult"}
+ else:
+  model={"BASE_VALUE":sum(df[resp]*df[weightCol])/sum(df[weightCol]), "featcomb":"mult"}
  
  for cat in cats:
   model = add_cat_to_model(model, df, cat, catMinPrev, defaultValue, weightCol)

@@ -2,24 +2,36 @@ import pandas as pd
 import numpy as np
 import math
 
-def get_weighted_gini(df, predCol, actCol, weightCol):
+def get_weighted_gini(df, predCol, actCol, weightCol, tiebreaks="pessimistic"):
  df['meanAct'] = sum(df[actCol]*df[weightCol])/sum(df[weightCol])
- df['invPred'] = -df[predCol]
- df = df.sort_values(['invPred', actCol])
+ 
+ if tiebreaks=="pessimistic":
+  df = df.sort_values([predCol, actCol], ascending=[False,True])
+ elif tiebreaks=="optimistic":
+  df = df.sort_values([predCol, actCol], ascending=[False,False])
+ else:
+  df = df.sort_values(predCol, ascending=False)
+ 
  df['diff'] = df[actCol]-df['meanAct']
  df['gap'] = (df['diff']*df[weightCol]).cumsum()
  df['base'] = (df['meanAct']*df[weightCol]).cumsum()
  return sum(df['gap']*df[weightCol])/sum(df['base']*df[weightCol])
 
-def get_weighted_Xiles(df, predCol, actCol, weightCol, X=10):
- df['invAct'] = -df[actCol]
- df = df.sort_values([predCol, 'invAct'])
+def get_weighted_Xiles(df, predCol, actCol, weightCol, X=10, tiebreaks="pessimistic"):
+ if tiebreaks=="pessimistic":
+  df = df.sort_values([predCol, actCol], ascending=[True,False])
+ elif tiebreaks=="optimistic":
+  df = df.sort_values([predCol, actCol], ascending=[True,True])
+ else:
+  df = df.sort_values(predCol, ascending=True)
+ 
  totWeight = sum(df[weightCol])
  df['cumWeight'] = df[weightCol].cumsum()
  p=[]
  a=[]
  for i in range(X):
-  subDf = df[df['cumWeight']>(i*totWeight/X)][df['cumWeight']<=((i+1)*totWeight/X)]
+  subDf = df[df['cumWeight']>(i*totWeight/X)].reset_index(drop=True)
+  subDf = subDf[subDf['cumWeight']<=((i+1)*totWeight/X)]
   p.append(sum(subDf[predCol]*subDf[weightCol])/sum(subDf[weightCol]))
   a.append(sum(subDf[actCol]*subDf[weightCol])/sum(subDf[weightCol]))
  return p, a
@@ -63,11 +75,6 @@ def get_MPE(df, predCol, actCol):
 def get_RMSPE(df, predCol, actCol):
  df["w8"] = 1
  return get_weighted_RMSPE(df, predCol, actCol, "w8")
-
-#---
-
-def get_custom_metric(df, predCol, actCol, OF=[[-1000,0],[-50,0.1],[-20,0.2],[0,1],[10,0],[1000,-99]]):
- overestPercent = 100*(df[predCol]-df[actCol])/df[actCol]
  
 
 if __name__ == '__main__':
