@@ -36,13 +36,13 @@ def get_weighted_Xiles(df, predCol, actCol, weightCol, X=10, tiebreaks="pessimis
   a.append(sum(subDf[actCol]*subDf[weightCol])/sum(subDf[weightCol]))
  return p, a
 
-def get_gini(df, predCol, actCol):
+def get_gini(df, predCol, actCol, tiebreaks="pessimistic"):
  df["w8"] = 1
- return get_weighted_gini(df, predCol, actCol, 'w8')
+ return get_weighted_gini(df, predCol, actCol, 'w8', tiebreaks)
 
-def get_Xiles(df, predCol, actCol, X=10):
+def get_Xiles(df, predCol, actCol, X=10, tiebreaks="pessimistic"):
  df["w8"] = 1
- return get_weighted_Xiles(df, predCol, actCol, 'w8', X)
+ return get_weighted_Xiles(df, predCol, actCol, 'w8', X, tiebreaks)
 
 #---
 
@@ -84,3 +84,14 @@ if __name__ == '__main__':
  print(get_weighted_gini(df, 'P','A','W')/get_weighted_gini(df, 'A','A','W'))
  
  print(get_weighted_Xiles(df, 'P','A','W', 3))
+ 
+ 
+ df = pd.DataFrame({"P":[1,3,3,3,5],"A":[1,2,4,3,5]})
+ print(get_gini(df,'P','A', "pessimistic"))
+ print(get_gini(df,'P','A', "optimistic"))
+ print(get_gini(df,'P','A', "whatever"))
+ 
+ print(get_Xiles(df,'P','A', 5, "pessimistic"))
+ print(get_Xiles(df,'P','A', 5, "optimistic"))
+ print(get_Xiles(df,'P','A', 5, "whatever"))
+ 
