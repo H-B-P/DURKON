@@ -47,14 +47,14 @@ def get_Xiles(df, predCol, actCol, X=10, tiebreaks="pessimistic"):
 #---
 
 def get_weighted_MAE(df, predCol, actCol, weightCol):
- return ((df[predCol]-df[actCol]).abs()*df[weightCol]).sum()/sum(weightCol)
+ return ((df[predCol]-df[actCol]).abs()*df[weightCol]).sum()/sum(df[weightCol])
 
 def get_weighted_RMSE(df, predCol, actCol, weightCol):
- return math.sqrt(((df[predCol]-df[actCol])*(df[predCol]-df[actCol])*df[weightCol]).sum()/sum(weightCol))
+ return math.sqrt(((df[predCol]-df[actCol])*(df[predCol]-df[actCol])*df[weightCol]).sum()/sum(df[weightCol]))
 
 def get_weighted_MPE(df, predCol, actCol, weightCol): #Yes, I know the standard definition uses Actual as the denominator. The standard definition is wrong.
  PE = 100*(df[predCol]-df[actCol])/df[predCol]
- return (PE.abs()*df[weightCol]).sum()/sum(weightCol)
+ return (PE.abs()*df[weightCol]).sum()/sum(df[weightCol])
 
 def get_weighted_RMSPE(df, predCol, actCol, weightCol): 
  PE = 100*(df[predCol]-df[actCol])/df[predCol]

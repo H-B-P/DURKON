@@ -123,6 +123,8 @@ def draw_catcat_pdp(catcat, targetSpan=0, name="graph", model=0, defaultValue=1,
  
  styleno=0
  
+ Ys = []
+ 
  for thing1 in catcat["uniques"]:
   X2=[]
   Y=[]
@@ -133,6 +135,7 @@ def draw_catcat_pdp(catcat, targetSpan=0, name="graph", model=0, defaultValue=1,
    X2.append(otherName)
    Y.append(catcat["uniques"][thing1]["OTHER"])
   bars.append(go.Bar(name=thing1, x=X2, y=Y, marker_color=colors[styleno], marker_pattern={'shape':shapes[styleno]}))
+  Ys = Ys+Y
   styleno+=1
  
  X2=[]
@@ -149,10 +152,11 @@ def draw_catcat_pdp(catcat, targetSpan=0, name="graph", model=0, defaultValue=1,
   botherWithOther=True
  if botherWithOther:
   bars.append(go.Bar(name=otherName, x=X2, y=Y, marker_color='gray', marker_pattern={'shape':''}))
+  Ys = Ys+Y
  
  layout = {
   "yaxis": {
-    "range": [min(min(Y)-leeway, 0, defaultValue-targetSpan), max(max(Y)+leeway, defaultValue+targetSpan)]
+    "range": [min(min(Ys)-leeway, 0, defaultValue-targetSpan), max(max(Ys)+leeway, defaultValue+targetSpan)]
   }
  }
  
@@ -351,7 +355,7 @@ if __name__=="__main__":
  exampleCont = [[0,1.19],[1,1.01],[10000,0.93],[50000,0.81]]
  draw_cont_pdp(exampleCont, 0.5, "Vehicle_Odometer_Reading", ytitle="Multiplier")
  
- exampleCatCat = {'uniques':{'Britain':{'uniques':{'Four-Wheel Drive':1.1,'Two-Wheel Drive':1.2},'OTHER':1.3},'France':{'uniques':{'Four-Wheel Drive':1.4,'Two-Wheel Drive':1.0},'OTHER':1.6}},'OTHER':{'uniques':{'Four-Wheel Drive':1.7,'Two-Wheel Drive':1.35},'OTHER':1.9}}
+ exampleCatCat = {'uniques':{'Britain':{'uniques':{'Four-Wheel Drive':2.1,'Two-Wheel Drive':1.2},'OTHER':1.3},'France':{'uniques':{'Four-Wheel Drive':1.4,'Two-Wheel Drive':1.0},'OTHER':1.6}},'OTHER':{'uniques':{'Four-Wheel Drive':1.7,'Two-Wheel Drive':1.35},'OTHER':1.9}}
  draw_catcat_pdp(exampleCatCat, 0.5, "Vehicle_Nation_of_Origin X Vehicle_Drive_Type", cat1="Vehicle_Nation_of_Origin", cat2="Vehicle_Drive_Type", ytitle="Multiplier")
  
  exampleCatCont = {"uniques":{"Ford":[[1000,1.1],[2000,1.2],[3500,1.3]],"Hyundai":[[1000,1.4],[2000,1.5],[3500,1.6]]},"OTHER":[[1000,1.7],[2000,1.8],[3500,1.9]]}
