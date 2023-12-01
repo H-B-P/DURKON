@@ -683,6 +683,216 @@ def list_importances(df, model):
  op = op.sort_values(["imp"], ascending=False).reset_index().drop("index", axis=1)
  return op
 
+#on your marks
+
+def mark_anomalous_rows(df,model,nilList = ['',np.nan,' ']):
+ 
+ markedDf = df.reset_index(drop=True)
+ 
+ markedDf["OUTLIER_COUNT"]=0
+ 
+ markedDf["OTHER_COUNT"]=0
+ 
+ markedDf["MISSING_COUNT"]=0
+ 
+ if "conts" in model:
+  for col in model["conts"]:
+   cont = model["conts"][col]
+   print(cont)
+   
+   markedDf[col+'___MISSING'] = 0
+   markedDf[markedDf[col].isna()][col+'___MISSING'] = 1
+   markedDf[markedDf[col].isin(nilList)][col+'___MISSING'] = 1
+   
+   markedDf["MISSING_COUNT"]+=markedDf[col+'___MISSING']
+   
+   markedDf[col+'___OUTLIER'] = 0
+   markedDf[(markedDf[col]<(cont[0][0]))][col+'___OUTLIER'] = 1
+   markedDf[(markedDf[col]>(cont[-1][0]))][col+'___OUTLIER'] = 1
+   
+   markedDf["OUTLIER_COUNT"]+=markedDf[col+'___OUTLIER']
+ 
+ if "cats" in model:
+  for col in model["cats"]:
+   cat = model["cats"][col]
+   
+   markedDf[col+'___OTHER'] = 0
+   markedDf[~markedDf[col].isin(cat['uniques'])][col+'___OTHER'] = 1
+   
+   markedDf["OTHER_COUNT"]+=markedDf[col+'___OTHER']
+   
+   
+   markedDf[col+'___MISSING'] = 0
+   markedDf[markedDf[col].isna()][col+'___MISSING'] = 1
+   markedDf[markedDf[col].isin(nilList)][col+'___MISSING'] = 1
+   
+   markedDf["MISSING_COUNT"]+=markedDf[col+'___MISSING']
+ 
+ return markedDf
+
+def measure_measure(trainDf, model, testDf, weightCol=None):
+ 
+ trDf = trainDf.reset_index(drop=True)
+ teDf = testDf.reset_index(drop=True)
+ 
+ if weightCol==None:
+  teDf["MEASURE_WEIGHT"] = 1
+ else:
+  teDf["MEASURE_WEIGHT"] = testDf[weightCol]
+ 
+ teDf["measure"]=0
+ 
+ for col in model['cats']:
+  for u in model['cats'][col][uniques]:
+   subTrDf = trDf[trDf[col]==u]
+   P = sum(subTrDf["MEASURE_WEIGHT"])/sum(trainDf["MEASURE_WEIGHT"])
+   teDf[teDf[col]==u]["measure"] -= np.log(P) 
+  subTrDf = trainDf[~trainDf[col].isin(model['cats'][col][uniques])]
+  P = sum(subTrDf["MEASURE_WEIGHT"])/sum(trainDf["MEASURE_WEIGHT"])
+  teDf[~teDf[col].isin(model['cats'][col][uniques])]["measure"] -= np.log(P)
+ 
+ for col in model['conts']:
+  
+  contrel = rele.produce_cont_relevances(model, trainDf[col]) 
+  contwrel = trDf["MEASURE_WEIGHT"]*contrel
+  
+  releTots = sum(contwrel, axis=1)
+  releTots = releTots/sum(releTots)
+  
+  relaCont = []
+  for i in range(len(model['conts'][col])):
+   relaCont.append([model['conts'][col][i][0], releTots[i]])
+  
+  P = get_effect_of_this_cont_col(teDf[col], relaCont)
+  P[pd.to_numeric(df['column_name'], errors='coerce').isna()] = releTots[-1]
+  
+  teDf["measure"] -= np.log(P)
+ 
+ return teDf["measure"]
+  
+  
+  
+  
+
+#mathematics, mostly for momentum in modelling
+
+def add_models(modelA,modelB): #NOTE: only works for models with identical shapes!
+ 
+ modelC = copy.deepcopy(modelA)
+ 
+ if "conts" in modelA:
+  for col in modelA["conts"]:
+   for i in range(len(modelA["conts"][col])):
+    modelC["conts"][col][i][1] = modelA["conts"][col][i][1] + modelB["conts"][col][i][1]
+ 
+ if "cats" in modelA: 
+  for col in modelA["cats"]:
+   modelC["cats"][col]["OTHER"] = modelA["cats"][col]["OTHER"] + modelB["cats"][col]["OTHER"]
+   for u in modelA["conts"][col]["uniques"]:
+    modelC["conts"][col]["uniques"][u] = modelA["conts"][col]["uniques"][u] + modelB["conts"][col]["uniques"][u]
+  
+ if "catcats" in modelA:
+  for cols in modelA["catcats"]:
+   modelC["catcats"][cols]["OTHER"]["OTHER"] = modelA["catcats"][cols]["OTHER"]["OTHER"] + modelB["catcats"][cols]["OTHER"]["OTHER"]
+   for u in modelA["catcats"][cols]["OTHER"]["uniques"]:
+    modelC["catcats"][cols]["OTHER"]["uniques"][u] = modelA["catcats"][cols]["OTHER"]["uniques"][u] + modelB["catcats"][cols]["OTHER"]["uniques"][u]
+   for u1 in modelA["catcats"][cols]["uniques"]:
+    modelC["catcats"][cols]["uniques"][u1]["OTHER"] = modelA["catcats"][cols]["uniques"][u1]["OTHER"] + modelB["catcats"][cols]["uniques"][u1]["OTHER"]
+    for u2 in modelA["catcats"][cols]["uniques"][u1]["uniques"]:
+     modelC["catcats"][cols]["uniques"][u1]["uniques"][u2] = modelA["catcats"][cols]["uniques"][u1]["uniques"][u2] + modelB["catcats"][cols]["uniques"][u1]["uniques"][u2]
+ 
+ if "catconts" in modelA:
+  for cols in modelA["catconts"]:
+   for i in range(len(modelA["catconts"][cols]["OTHER"])):
+    modelC["catconts"][cols]["OTHER"][i][1] = modelA["catconts"][cols]["OTHER"][i][1] + modelB["catconts"][cols]["OTHER"][i][1]
+   for u in modelA["catconts"][cols]["uniques"]:
+    for i in range(len(modelA["catconts"][cols]["OTHER"])):
+     modelC["catconts"][cols]["uniques"][u][i][1] = modelA["catconts"][cols]["uniques"][u][i][1] + modelB["catconts"][cols]["uniques"][u][i][1]
+ 
+ if "contconts" in modelA:
+  for cols in modelA["catconts"]:
+   for i in range(len(modelA["contconts"][cols])):
+    for j in range(len(modelA["contconts"][cols][0][1])):
+     modelC[i][1][j][1] = modelA[i][1][j][1] + modelB[i][1][j][1]
+
+def subtract_models(modelA, modelB): #NOTE: only works for models with identical shapes!
+ 
+ modelC = copy.deepcopy(modelA)
+ 
+ if "conts" in modelA:
+  for col in modelA["conts"]:
+   for i in range(len(modelA["conts"][col])):
+    modelC["conts"][col][i][1] = modelA["conts"][col][i][1] - modelB["conts"][col][i][1]
+ 
+ if "cats" in modelA: 
+  for col in modelA["cats"]:
+   modelC["cats"][col]["OTHER"] = modelA["cats"][col]["OTHER"] - modelB["cats"][col]["OTHER"]
+   for u in modelA["conts"][col]["uniques"]:
+    modelC["conts"][col]["uniques"][u] = modelA["conts"][col]["uniques"][u] - modelB["conts"][col]["uniques"][u]
+  
+ if "catcats" in modelA:
+  for cols in modelA["catcats"]:
+   modelC["catcats"][cols]["OTHER"]["OTHER"] = modelA["catcats"][cols]["OTHER"]["OTHER"] - modelB["catcats"][cols]["OTHER"]["OTHER"]
+   for u in modelA["catcats"][cols]["OTHER"]["uniques"]:
+    modelC["catcats"][cols]["OTHER"]["uniques"][u] = modelA["catcats"][cols]["OTHER"]["uniques"][u] - modelB["catcats"][cols]["OTHER"]["uniques"][u]
+   for u1 in modelA["catcats"][cols]["uniques"]:
+    modelC["catcats"][cols]["uniques"][u1]["OTHER"] = modelA["catcats"][cols]["uniques"][u1]["OTHER"] - modelB["catcats"][cols]["uniques"][u1]["OTHER"]
+    for u2 in modelA["catcats"][cols]["uniques"][u1]["uniques"]:
+     modelC["catcats"][cols]["uniques"][u1]["uniques"][u2] = modelA["catcats"][cols]["uniques"][u1]["uniques"][u2] - modelB["catcats"][cols]["uniques"][u1]["uniques"][u2]
+ 
+ if "catconts" in modelA:
+  for cols in modelA["catconts"]:
+   for i in range(len(modelA["catconts"][cols]["OTHER"])):
+    modelC["catconts"][cols]["OTHER"][i][1] = modelA["catconts"][cols]["OTHER"][i][1] - modelB["catconts"][cols]["OTHER"][i][1]
+   for u in modelA["catconts"][cols]["uniques"]:
+    for i in range(len(modelA["catconts"][cols]["OTHER"])):
+     modelC["catconts"][cols]["uniques"][u][i][1] = modelA["catconts"][cols]["uniques"][u][i][1] - modelB["catconts"][cols]["uniques"][u][i][1]
+ 
+ if "contconts" in modelA:
+  for cols in modelA["catconts"]:
+   for i in range(len(modelA["contconts"][cols])):
+    for j in range(len(modelA["contconts"][cols][0][1])):
+     modelC[i][1][j][1] = modelA[i][1][j][1] - modelB[i][1][j][1]
+
+def mult_model(model, mult):
+ 
+ if "conts" in model:
+  for col in model["conts"]:
+   for i in range(len(model["conts"][col])):
+    model["conts"][col][i][1] *= mult
+ 
+ if "cats" in model: 
+  for col in model["cats"]:
+   model["cats"][col]["OTHER"] *= mult
+   for u in model["conts"][col]["uniques"]:
+    model["conts"][col]["uniques"][u] *= mult
+  
+ if "catcats" in model:
+  for cols in model["catcats"]:
+   model["catcats"][cols]["OTHER"]["OTHER"] *= mult
+   for u in model["catcats"][cols]["OTHER"]["uniques"]:
+    model["catcats"][cols]["OTHER"]["uniques"][u] *= mult
+   for u1 in model["catcats"][cols]["uniques"]:
+    model["catcats"][cols]["uniques"][u1]["OTHER"] *= mult
+    for u2 in model["catcats"][cols]["uniques"][u1]["uniques"]:
+     model["catcats"][cols]["uniques"][u1]["uniques"][u2] *= mult
+ 
+ if "catconts" in model:
+  for cols in model["catconts"]:
+   for i in range(len(model["catconts"][cols]["OTHER"])):
+    model["catconts"][cols]["OTHER"][i][1] *= mult
+   for u in modelA["catconts"][cols]["uniques"]:
+    for i in range(len(model["catconts"][cols]["OTHER"])):
+     model["catconts"][cols]["uniques"][u][i][1] *= mult
+ 
+ if "contconts" in model:
+  for cols in model["catconts"]:
+   for i in range(len(model["contconts"][cols])):
+    for j in range(len(model["contconts"][cols][0][1])):
+     model[i][1][j][1] *= mult
 
 if __name__ == '__main__':
- pass
+ model = {"conts":{"cont1":[[2,1],[6,1]], "cont2":[[1,1],[200,1]]}, "cats":{"cat1":{"uniques":{"a":1,"b":1,"c":1},"OTHER":1},"cat2":{"uniques":{"two":1,"three":1},"OTHER":1}}}
+ df = pd.DataFrame({"cont1":[1,2,3,4,5,6],"cont2":[1,10,100,1000,10000,np.nan], "cat1":['a','b','c','','e','f'], "cat2":['one','two','two','three','three','three']})
+ markedDf = mark_anomalous_rows(df, model)
+ print(markedDf)

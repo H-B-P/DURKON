@@ -16,7 +16,7 @@ import prep
 #link, linkgrad are per pred; linkgrad is then per model
 #lossgrad is per df, then per pred
 
-def train_models(inputDfs, targets, nrounds, lrs, startingModels, weightCol=None, staticFeats = [], lras=None, lossgrads=[[calculus.Gauss_grad]], links=[calculus.Unity_link], linkgrads=[[calculus.Unity_link_grad]], pens=None, minRela=None, prints="verbose", record=False):
+def train_models(inputDfs, targets, nrounds, lrs, startingModels, weightCol=None, staticFeats = [], lras=None, lossgrads=[[calculus.Gauss_grad]], links=[calculus.Unity_link], linkgrads=[[calculus.Unity_link_grad]], pens=None, minRela=None, prints="verbose", record=False, momentum=0.01):
  
  history=[]
  
@@ -176,21 +176,11 @@ def train_models(inputDfs, targets, nrounds, lrs, startingModels, weightCol=None
     
     combs.append(comb)
    
-   #linkgradients = [[misc.lambdapply(linkgrad, combs) for linkgrad in linkgradset] for linkgradset in linkgrads]
-   #preds = [misc.lambdapply(link, combs) for link in links]
-   #lossgradients = [misc.lambdapply(lossgrad, preds+[df[target]]) for lossgrad in lossgrads[d]]
-   #
-   #print("linkg", linkgradients)
-   #print('p', preds)
-   #print("lossg", lossgradients)
-   
    
    linkgradients = [[linkgrad(*combs) for linkgrad in linkgradset] for linkgradset in linkgrads]
    preds = [link(*combs) for link in links]
    tCols = [inputDf[target] for target in targets]
    lossgradients = [lossgrad(*preds,*tCols) for lossgrad in lossgrads[d]]
-   
-   #print(lossgradients)
    
    for p in range(len(preds)):
     
@@ -363,13 +353,22 @@ def train_models(inputDfs, targets, nrounds, lrs, startingModels, weightCol=None
   if minRela!=None:
    models = [misc.enforce_min_rela(model, minRela) for model in models]
   
+  #Momentumize!
+  
+  if type(record)==type([]):
+   if momentum!=0:
+    if len(record)>1:
+     for m in range(len(models)):
+      diff = misc.subtract_models(record[-1][m], record[-2][m])
+      models[m] = misc.add_models(models[m], misc.mult_model(diff, momentum))
+  
   history.append(models)
  
  if record: 
   return models, history
  return models
 
-def train_model(inputDf, target, nrounds, lr, startingModel, weightCol=None, staticFeats = [], pen=0, specificPens={}, lossgrad=calculus.Poisson_grad, link=calculus.Unity_link, linkgrad=calculus.Unity_link_grad, minRela=None, prints="verbose", record=False):
+def train_model(inputDf, target, nrounds, lr, startingModel, weightCol=None, staticFeats = [], pen=0, specificPens={}, lossgrad=calculus.Poisson_grad, link=calculus.Unity_link, linkgrad=calculus.Unity_link_grad, minRela=None, prints="verbose", record=False, momentum=0.01):
  
  history=[]
  
@@ -591,15 +590,27 @@ def train_model(inputDf, target, nrounds, lr, startingModel, weightCol=None, sta
    
    if minRela!=None:
     model = misc.enforce_min_rela(model, minRela)
- 
+  
+  #Momentumize!
+  
+  if type(record)==type([]):
+   if momentum!=0:
+    if len(record)>1:
+     diff = misc.subtract_models(record[-1], record[-2])
+     model = misc.add_models(model, misc.mult_model(diff, momentum))
+  
   history.append(model)
+ 
+ 
  
  if record:
   return model, history
  return model
 
 
-if __name__ == '__main__':
+
+
+if False:#__name__ == '__main__':
  df = pd.DataFrame({"cont1":[0,1,0,1],"cat1":[0,0,1,1],"y":[0,1,1,4]})
  model = {"BASE_VALUE":1.0,"conts":{"cont1":[[0,0],[1,1]]}, "cats":{"cat1":{"uniques":{0:0, 1:0},"OTHER":0}},'featcomb':'addl'}
  model = train_model(df, "y", 100, 0.1, model, lossgrad=calculus.Gauss_grad)

@@ -4,8 +4,6 @@ import math
 import scipy
 from scipy.special import erf
 
-import misc
-
 #Easy objective functions
 
 def Gauss_grad(pred,act):
@@ -216,12 +214,39 @@ def gnormal_u_diff_censored(u, p, y):
 
 def gnormal_p_diff_censored(u, p, y):
  return -(((y-u)/p)*PDF(u,p,y)/CDF(u,p,y))
- 
+
+# . . . and make it double!
+
+def gnormal_u_diff_doublecensored(u,p,y,c1,c2):
+ return ((-c2/u)*PDF(u,p,c2) - (-c1/u)*PDF(u,p,c1)) / (CDF(u,p,c2) - CDF(u,p,c1))
+
+def gnormal_p_diff_doublecensored(u,p,y,c1,c2):
+ return ((-(c2-u)/p)*PDF(u,p,c2) - (-(c1-u)/p)*PDF(u,p,c1)) / (CDF(u,p,c2) - CDF(u,p,c1))
+
+def gnormal_u_diff_doubleuncensored(u,p,y,c1,c2):
+ return gnormal_u_diff(u,p,y)
+
+def gnormal_p_diff_doubleuncensored(u,p,y,c1,c2):
+ return gnormal_p_diff(u,p,y)
+
 #Techne
+
+def get_effect_of_this_cont_col(ser, cont):
+ x = ser
+ effectOfCol = pd.Series([1]*len(ser))
+ effectOfCol.loc[(x<=cont[0][0])] = cont[0][1] #Everything too early gets with the program
+ for i in range(len(cont)-1):
+  x1 = cont[i][0]
+  x2 = cont[i+1][0]
+  y1 = cont[i][1]
+  y2 = cont[i+1][1]
+  effectOfCol.loc[(x>=x1)&(x<=x2)] = ((x-x1)*y2 + (x2-x)*y1)/(x2 - x1)
+ effectOfCol.loc[x>=cont[-1][0]] = cont[-1][1] #Everything too late gets with the program
+ return effectOfCol
 
 def techne_mult_eval(pred,act, obj=[[-1,-1],[0,1],[1,-1]]):
  err = (pred-act)/act
- return sum(misc.get_effect_of_this_cont_col(err, obj))/len(err)
+ return sum(get_effect_of_this_cont_col(err, obj))/len(err)
 
 def create_techne_mult_grad(obj):
  def techne_grad(pred, act):

@@ -21,20 +21,20 @@ def prep_multiplicative_model(inputDf, resp, cats, conts, catMinPrev=0.01, contT
  return prep_model(inputDf, resp, cats, conts, catMinPrev=0.01, contTargetPts=5, contEdge=0.01, weightCol=None)
 
 
-def train_gamma_model(inputDf, resp, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal"):
+def train_gamma_model(inputDf, resp, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal", momentum=0):
  df = inputDf.reset_index(drop=True)
- model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, pen=pen, specificPens={}, lossgrad=calculus.Gamma_grad, prints=prints)
+ model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, pen=pen, specificPens={}, lossgrad=calculus.Gamma_grad, prints=prints, momentum=momentum)
  return model
 
-def train_poisson_model(inputDf, resp, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal"):
+def train_poisson_model(inputDf, resp, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal", momentum=0):
  df = inputDf.reset_index(drop=True)
- model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, pen=pen, specificPens={}, lossgrad=calculus.Poisson_grad, prints=prints)
+ model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, pen=pen, specificPens={}, lossgrad=calculus.Poisson_grad, prints=prints, momentum=momentum)
  return model
 
-def train_tweedie_model(inputDf, resp, nrounds, lr, model, pTweedie=1.5, pen=0, weightCol=None, staticFeats=[], prints="normal"):
+def train_tweedie_model(inputDf, resp, nrounds, lr, model, pTweedie=1.5, pen=0, weightCol=None, staticFeats=[], prints="normal", momentum=0):
  df = inputDf.reset_index(drop=True)
  Tweedie_grad = calculus.produce_Tweedie_grad(pTweedie) 
- model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, pen=pen, specificPens={}, lossgrad=Tweedie_grad, prints=prints)
+ model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, pen=pen, specificPens={}, lossgrad=Tweedie_grad, prints=prints, momentum=momentum)
  return model
 
 
@@ -221,9 +221,9 @@ def prep_gamma_models(inputDf, resp, cats, conts, N=1, fractions=None, catMinPre
   models.append(model)
  return models
 
-def train_gamma_models(inputDf, resp, nrounds, lrs, models, pens=None, weightCol=None, staticFeats=[], prints="normal"):
+def train_gamma_models(inputDf, resp, nrounds, lrs, models, pens=None, weightCol=None, staticFeats=[], prints="normal", momentum=0):
  df = inputDf.reset_index(drop=True)
- models = actual_modelling.train_models([df], resp, nrounds, lrs, models, weightCol, staticFeats, lras=calculus.addsmoothing_LRAs, lossgrads=[[calculus.Gamma_grad]], links=[calculus.Add_mlink], linkgrads=[[calculus.Add_mlink_grad]*len(models)], pens=pens, prints=prints)
+ models = actual_modelling.train_models([df], resp, nrounds, lrs, models, weightCol, staticFeats, lras=calculus.addsmoothing_LRAs, lossgrads=[[calculus.Gamma_grad]], links=[calculus.Add_mlink], linkgrads=[[calculus.Add_mlink_grad]*len(models)], pens=pens, prints=prints, momentum=momentum)
  return models
 
 def interxhunt_gamma_models(inputDf, resp, cats, conts, models, silent=False, weightCol=None, filename="suggestions"):
@@ -300,13 +300,23 @@ def gnormalize_gamma_models(models, inputDf, resp, cats, conts, startingErrorPer
  models.append(errModel)
  return models
 
-def train_gnormal_models(inputDfs, resp, nrounds, lrs, models, pens=None, weightCol=None, staticFeats=[], prints="normal"):
+def train_gnormal_models(inputDfs, resp, nrounds, lrs, models, pens=None, weightCol=None, staticFeats=[], prints="normal", momentum=0):
  if type(inputDfs)!=list:
   dfs=[inputDfs.reset_index(drop=True)]
  else:
   dfs = [inputDf.reset_index(drop=True) for inputDf in inputDfs]
  
  models = actual_modelling.train_models(dfs, resp, nrounds, lrs, models, weightCol, staticFeats, lras = calculus.addsmoothing_LRAs_erry[:len(models)-1] + [calculus.default_LRA], lossgrads = [[calculus.gnormal_u_diff, calculus.gnormal_p_diff],[calculus.gnormal_u_diff_censored, calculus.gnormal_p_diff_censored]], links=[calculus.Add_mlink_allbutlast, calculus.Add_mlink_onlylast], linkgrads=[[calculus.Add_mlink_grad]*(len(models)-1)+[calculus.Add_mlink_grad_void], [calculus.Add_mlink_grad_void]*(len(models)-1)+[calculus.Add_mlink_grad]], pens=pens, prints=prints)
+ 
+ return models
+
+def train_doublecensored_gnormal_models(inputDfs, resps, nrounds, lrs, models, pens=None, weightCol=None, staticFeats=[], prints="normal", momentum=0):
+ if type(inputDfs)!=list:
+  dfs=[inputDfs.reset_index(drop=True)]
+ else:
+  dfs = [inputDf.reset_index(drop=True) for inputDf in inputDfs]
+ 
+ models = actual_modelling.train_models(dfs, resps, nrounds, lrs, models, weightCol, staticFeats, lras = calculus.addsmoothing_LRAs_erry[:len(models)-1] + [calculus.default_LRA], lossgrads = [[calculus.gnormal_u_diff_doubleuncensored, calculus.gnormal_p_diff_doubleuncensored],[calculus.gnormal_u_diff_doublecensored, calculus.gnormal_p_diff_doublecensored]], links=[calculus.Add_mlink_allbutlast, calculus.Add_mlink_onlylast], linkgrads=[[calculus.Add_mlink_grad]*(len(models)-1)+[calculus.Add_mlink_grad_void], [calculus.Add_mlink_grad_void]*(len(models)-1)+[calculus.Add_mlink_grad]], pens=pens, prints=prints)
  
  return models
 
@@ -387,6 +397,85 @@ def interxhunt_gnormal_models(inputDfs, resp, cats, conts, models, silent=False,
   sugDf.to_csv(filename+"_"+ALPHABET[m]+".csv")
 
 
+
+def interxhunt_doublecensored_gnormal_models(inputDfs, resps, cats, conts, models, silent=False, weightCol=None, filename="suggestions"):
+ 
+ if type(inputDfs)!=list:
+  dfs = [inputDfs.reset_index(drop=True)]
+ else:
+  dfs = [inputDf.reset_index(drop=True) for inputDf in inputDfs]
+ 
+ if len(dfs)==2:
+  cdf = dfs[0].append(dfs[1]).reset_index()
+ else:
+  cdf = dfs[0]
+ 
+ trialModelTemplate = []
+ 
+ 
+ for m in range(len(models)):
+  for df in dfs:
+   df["PredComb_"+str(m)]=misc.predict(df, models[m])
+  
+  minever = min([min(df["PredComb_"+str(m)]) for df in dfs])
+  maxever = max([max(df["PredComb_"+str(m)]) for df in dfs])
+  trialModelTemplate.append({"BASE_VALUE":1, "conts":{"PredComb_"+str(m):[[minever, minever], [maxever, maxever]]}, "featcomb":"mult"})
+ 
+ 
+ sugImps=[[] for m in range(len(models))]
+ sugFeats=[[] for m in range(len(models))]
+ sugTypes=[[] for m in range(len(models))]
+ 
+ for i in range(len(cats)):
+  for j in range(i+1, len(cats)):
+   if not silent:
+    print(cats[i] + " X " + cats[j])
+   
+   trialModels = copy.deepcopy(trialModelTemplate)
+   trialModels = [prep.add_catcat_to_model(trialModel, cdf, cats[i], cats[j], defaultValue=1) for trialModel in trialModels]
+   trialModels = train_doublecensored_gnormal_models(dfs, resps, 1, [1]*len(models), trialModels, weightCol, staticFeats=["PredComb_"+str(m) for m in range(len(models))], prints="silent")
+   
+   for m in range(len(models)):
+    sugFeats[m].append(cats[i]+" X "+cats[j])
+    sugImps[m].append(misc.get_importance_of_this_catcat(cdf, trialModels[m], cats[i]+" X "+cats[j], defaultValue=0))
+    sugTypes[m].append("catcat")
+ 
+ for i in range(len(cats)):
+  for j in range(len(conts)):
+   if not silent:
+    print(cats[i] + " X " + conts[j])
+   
+   trialModels = copy.deepcopy(trialModelTemplate)
+   trialModels = [prep.add_catcont_to_model(trialModel, cdf, cats[i], conts[j], defaultValue=1) for trialModel in trialModels]
+   trialModels = train_doublecensored_gnormal_models(dfs, resps, 1, [1]*len(models), trialModels, weightCol, staticFeats=["PredComb_"+str(m) for m in range(len(models))], prints="silent")
+   
+   for m in range(len(models)):
+    sugFeats[m].append(cats[i]+" X "+conts[j])
+    sugImps[m].append(misc.get_importance_of_this_catcont(cdf, trialModels[m], cats[i]+" X "+conts[j], defaultValue=0))
+    sugTypes[m].append("catcont")
+   
+ for i in range(len(conts)):
+  for j in range(i+1, len(conts)):
+   if not silent:
+    print(conts[i] + " X " + conts[j])
+   
+   trialModels = copy.deepcopy(trialModelTemplate)
+   trialModels = [prep.add_contcont_to_model(trialModel, cdf, conts[i], conts[j], defaultValue=1) for trialModel in trialModels]
+   trialModels = train_doublecensored_gnormal_models(dfs, resps, 1, [1]*len(models), trialModels, weightCol, staticFeats=["PredComb_"+str(m) for m in range(len(models))], prints="silent")
+   
+   for m in range(len(models)):
+    sugFeats[m].append(conts[i]+" X "+conts[j])
+    sugImps[m].append(misc.get_importance_of_this_contcont(cdf, trialModels[m], conts[i]+" X "+conts[j], defaultValue=0))
+    sugTypes[m].append("contcont")
+ 
+ 
+ for m in range(len(models)-1):
+  sugDf = pd.DataFrame({"Interaction":sugFeats[m], "Type":sugTypes[m], "Importance":sugImps[m]})
+  sugDf = sugDf.sort_values(['Importance'], ascending=False).reset_index()
+  sugDf.to_csv(filename+"_"+ALPHABET[m]+".csv")
+
+
+
 def predict_from_gnormal(df, model):
  return misc.predict_models(df, model, calculus.Add_mlink_allbutlast)
  
@@ -400,9 +489,9 @@ def prep_additive_model(inputDf, resp, cats, conts, catMinPrev=0.01, contTargetP
  model["featcomb"] = "addl"
  return model
 
-def train_normal_model(inputDf, resp, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal"):
+def train_normal_model(inputDf, resp, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal", momentum=0):
  df = inputDf.reset_index(drop=True)
- model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, pen=pen, specificPens={}, lossgrad=calculus.Gauss_grad, prints=prints)
+ model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, pen=pen, specificPens={}, lossgrad=calculus.Gauss_grad, prints=prints, momentum=momentum)
  return model
 
 def interxhunt_normal_model(inputDf, resp, cats, conts, model, silent=False, weightCol=None, filename="suggestions"):
@@ -468,11 +557,11 @@ def prep_classifier_model(inputDf, resp, cats, conts, catMinPrev=0.01, contTarge
  model["featcomb"] = "addl"
  return model
 
-def train_classifier_model(inputDf, resp, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal"):
+def train_classifier_model(inputDf, resp, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal", momentum=0):
  
  df = inputDf.reset_index(drop=True)
  
- model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, pen=pen, specificPens={}, lossgrad=calculus.Logistic_grad, link = calculus.Logit_link, linkgrad = calculus.Logit_link_grad, prints=prints)
+ model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, pen=pen, specificPens={}, lossgrad=calculus.Logistic_grad, link = calculus.Logit_link, linkgrad = calculus.Logit_link_grad, prints=prints, momentum=momentum)
  return model
 
 def interxhunt_classifier_model(inputDf, resp, cats, conts, model, silent=False, weightCol=None, filename="suggestions"):
@@ -543,11 +632,11 @@ def prep_adjustment_model(inputDf, resp, startingPoint, cats, conts, catMinPrev=
  model["conts"][startingPoint] = [[min(df[startingPoint]), min(df[startingPoint])], [max(df[startingPoint]), max(df[startingPoint])]]
  return model
 
-def train_adjustment_model(inputDf, resp, startingPoint, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal"):
+def train_adjustment_model(inputDf, resp, startingPoint, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal", momentum=0):
  
  df = inputDf.reset_index(drop=True)
  
- model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats=[startingPoint]+staticFeats, pen=pen, specificPens={}, lossgrad=calculus.Gamma_grad, prints=prints)
+ model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats=[startingPoint]+staticFeats, pen=pen, specificPens={}, lossgrad=calculus.Gamma_grad, prints=prints, momentum=momentum)
  return model
 
 def interxhunt_adjustment_model(inputDf, resp, cats, conts, model, silent=False, weightCol=None, filename="suggestions"):
@@ -620,9 +709,9 @@ def prep_cratio_models(inputDf, resp, cats, conts, N=1, fractions=None, catMinPr
   models.append(model)
  return models
 
-def train_cratio_models(inputDf, resp, nrounds, lrs, models, pens=None, weightCol=None, staticFeats=[], minRela=0.1, prints="normal"):
+def train_cratio_models(inputDf, resp, nrounds, lrs, models, pens=None, weightCol=None, staticFeats=[], minRela=0.1, prints="normal", momentum=0):
  df = inputDf.reset_index(drop=True)
- models = actual_modelling.train_models([df], resp, nrounds, lrs, models, weightCol, staticFeats, lras=calculus.addsmoothing_LRAs, lossgrads=[[calculus.Logistic_grad]], links=[calculus.Cratio_mlink], linkgrads=[[calculus.Cratio_mlink_grad]*len(models)], pens=pens, minRela=minRela, prints=prints)
+ models = actual_modelling.train_models([df], resp, nrounds, lrs, models, weightCol, staticFeats, lras=calculus.addsmoothing_LRAs, lossgrads=[[calculus.Logistic_grad]], links=[calculus.Cratio_mlink], linkgrads=[[calculus.Cratio_mlink_grad]*len(models)], pens=pens, minRela=minRela, prints=prints, momentum=momentum)
  return models
 
 def interxhunt_cratio_models(inputDf, resp, cats, conts, models, silent=False, weightCol=None, filename="suggestions"):
