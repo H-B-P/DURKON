@@ -138,7 +138,7 @@ wraps.viz_gnormal_models(models, "Gnormal")
 
 #Tobit proof of concept
 
-df = pd.read_csv('gnormal2.csv')
+df = pd.read_csv('gnormal.csv')
 cdf = df[df['censored']].reset_index()
 udf = df[~df['censored']].reset_index()
 
@@ -169,7 +169,7 @@ wraps.viz_gnormal_models(models, "Tobit")
 
 #Twosided Tobit proof of concept
 
-df = pd.read_csv('gnormal2.csv')
+df = pd.read_csv('gnormal.csv')
 cdf = df[df['censored']].reset_index()
 udf = df[~df['censored']].reset_index()
 
