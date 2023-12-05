@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly
+import os
 
 import misc
 import prep
@@ -348,7 +349,12 @@ def draw_contcont_pdp_heatmap(contcont, targetSpan=0, name="graph", model=0, def
   plotly.offline.plot(fig, filename=folder+"/"+name+'__'+model+'.html', auto_open = False)
  
 
-def draw_cat_AvE(df, col, predCol, actCol, name="AvE", cat=None, catMinPrev=0.01, weightCol=None, folder="graphs"):
+def draw_cat_AvE(df, col, predCol, actCol, cat=None, catMinPrev=0.01, weightCol=None, folder="graphs"):
+ 
+ try:
+  os.mkdir("graphs")
+ except:
+  pass
  
  if weightCol==None:
   df["WEIGHT_COLUMN"] = 1
@@ -419,7 +425,12 @@ def draw_cat_AvE(df, col, predCol, actCol, name="AvE", cat=None, catMinPrev=0.01
  
  plotly.offline.plot(fig, filename=folder+"/AvE_for_"+col+'.html', auto_open = False)
  
-def draw_cont_AvE(df, col, predCol, actCol, name="AvE", cont=None, contTargetPts=5, contEdge=0.01, weightCol=None, folder="graphs"):
+def draw_cont_AvE(df, col, predCol, actCol, cont=None, contTargetPts=5, contEdge=0.01, weightCol=None, folder="graphs"):
+ 
+ try:
+  os.mkdir("graphs")
+ except:
+  pass
  
  if weightCol==None:
   df["WEIGHT_COLUMN"] = 1

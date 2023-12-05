@@ -6,73 +6,7 @@ import prep
 import misc
 import calculus
 import wraps
-
-#Tobit proof of concept
-
-df = pd.read_csv('gnormal2.csv')
-cdf = df[df['censored']].reset_index()
-udf = df[~df['censored']].reset_index()
-
-cats=[]
-conts=["x"]
-
-models = wraps.prep_gamma_models(udf, 'y', cats, conts, 1)
-models = wraps.train_gamma_models(udf, 'y', 1000, [0.1], models)
-
-print(models)
-
-models = wraps.gnormalize_gamma_models(models, udf, "y", cats, conts, 20)
-models = wraps.train_gnormal_models([udf,cdf], 'y', 1000, [0.1,0.005], models)
-
-pred = wraps.predict_from_gnormal(df, models)
-predErrPct = wraps.predict_error_from_gnormal(df, models)
-
-df["PREDICTED"]=pred
-
-print(df[["PREDICTED","true_y"]])
-
-print(df["PREDICTED"].mean())
-print(df["true_y"].mean())
-
-print(models)
-
-wraps.viz_gnormal_models(models, "Tobit")
-
-#Twosided Tobit proof of concept
-
-df = pd.read_csv('gnormal2.csv')
-cdf = df[df['censored']].reset_index()
-udf = df[~df['censored']].reset_index()
-
-cats=[]
-conts=["x"]
-
-models = wraps.prep_gamma_models(udf, 'y', cats, conts, 1)
-models = wraps.train_gamma_models(udf, 'y', 1000, [0.1], models)
-
-print(models)
-
-models = wraps.gnormalize_gamma_models(models, udf, "y", cats, conts, 20)
-models = wraps.train_doublecensored_gnormal_models([udf,cdf], ['y','censor1_y','censor2_y'], 3000, [0.01,0.005], models)
-
-pred = wraps.predict_from_gnormal(df, models)
-predErrPct = wraps.predict_error_from_gnormal(df, models)
-
-df["PREDICTED"]=pred
-
-print(df[["PREDICTED","true_y"]])
-
-print(df["PREDICTED"].mean())
-print(df["true_y"].mean())
-
-print(models)
-
-wraps.viz_gnormal_models(models, "Tobit2")
-
-#---
-
-assert(False)
-
+import viz
 
 
 #Weighted Poisson proof of concept
@@ -121,6 +55,16 @@ print(model)
 markedDf = misc.mark_anomalous_rows(df, model)
 
 print(markedDf)
+
+#AvE viz
+
+df["Predicted"] = pred
+df["Actual"] = df['y']
+
+viz.draw_cat_AvE(df, 'cat1', 'Predicted', 'Actual') 
+viz.draw_cont_AvE(df, 'cont1', 'Predicted', 'Actual') 
+
+#===
 
 #Gamma Proof of Concept
 
@@ -192,10 +136,67 @@ wraps.viz_gnormal_models(models, "Gnormal")
 
 
 
+#Tobit proof of concept
 
+df = pd.read_csv('gnormal2.csv')
+cdf = df[df['censored']].reset_index()
+udf = df[~df['censored']].reset_index()
 
+cats=[]
+conts=["x"]
 
-#---
+models = wraps.prep_gamma_models(udf, 'y', cats, conts, 1)
+models = wraps.train_gamma_models(udf, 'y', 1000, [0.1], models)
+
+print(models)
+
+models = wraps.gnormalize_gamma_models(models, udf, "y", cats, conts, 20)
+models = wraps.train_gnormal_models([udf,cdf], 'y', 1000, [0.1,0.005], models)
+
+pred = wraps.predict_from_gnormal(df, models)
+predErrPct = wraps.predict_error_from_gnormal(df, models)
+
+df["PREDICTED"]=pred
+
+print(df[["PREDICTED","true_y"]])
+
+print(df["PREDICTED"].mean())
+print(df["true_y"].mean())
+
+print(models)
+
+wraps.viz_gnormal_models(models, "Tobit")
+
+#Twosided Tobit proof of concept
+
+df = pd.read_csv('gnormal2.csv')
+cdf = df[df['censored']].reset_index()
+udf = df[~df['censored']].reset_index()
+
+cats=[]
+conts=["x"]
+
+models = wraps.prep_gamma_models(udf, 'y', cats, conts, 1)
+models = wraps.train_gamma_models(udf, 'y', 1000, [0.1], models)
+
+print(models)
+
+models = wraps.gnormalize_gamma_models(models, udf, "y", cats, conts, 20)
+models = wraps.train_doublecensored_gnormal_models([udf,cdf], ['y','censor1_y','censor2_y'], 3000, [0.01,0.005], models)
+
+pred = wraps.predict_from_gnormal(df, models)
+predErrPct = wraps.predict_error_from_gnormal(df, models)
+
+df["PREDICTED"]=pred
+
+print(df[["PREDICTED","true_y"]])
+
+print(df["PREDICTED"].mean())
+print(df["true_y"].mean())
+
+print(models)
+
+wraps.viz_gnormal_models(models, "Tobit2")
 
 #Additive Proof of Concept
 
