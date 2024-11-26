@@ -814,6 +814,8 @@ def add_models(modelA,modelB): #NOTE: only works for models with identical shape
    for i in range(len(modelA["contconts"][cols])):
     for j in range(len(modelA["contconts"][cols][0][1])):
      modelC[i][1][j][1] = modelA[i][1][j][1] + modelB[i][1][j][1]
+ 
+ return modelC
 
 def subtract_models(modelA, modelB): #NOTE: only works for models with identical shapes!
  
@@ -853,6 +855,8 @@ def subtract_models(modelA, modelB): #NOTE: only works for models with identical
    for i in range(len(modelA["contconts"][cols])):
     for j in range(len(modelA["contconts"][cols][0][1])):
      modelC[i][1][j][1] = modelA[i][1][j][1] - modelB[i][1][j][1]
+ 
+ return modelC
 
 def mult_model(model, mult):
  

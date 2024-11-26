@@ -14,6 +14,18 @@ print(trainDf)
 cats=["Flavour","Wedding?","Fancy?"]
 conts=["Width","Height","Icing Thickness"]
 
+model = wraps.prep_model(trainDf, "Price", cats, conts, bandConts=True)
+bandedTrainDf = prep.band_df(trainDf, model)
+
+print(model)
+
+model = wraps.train_gamma_model(bandedTrainDf, "Price", 200, 0.1, model)
+
+
+print(model)
+
+assert(False)
+
 model = wraps.prep_model(trainDf, "Price", cats, conts)
 
 print(model)

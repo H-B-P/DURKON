@@ -12,13 +12,10 @@ import viz
 
 ALPHABET="ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-def prep_model(inputDf, resp, cats, conts, catMinPrev=0.01, contTargetPts=5, contEdge=0.01, weightCol=None):
+def prep_model(inputDf, resp, cats, conts, catMinPrev=0.01, contTargetPts=5, contEdge=0.01, weightCol=None, bandConts=False):
  df = inputDf.reset_index(drop=True)
- model = prep.prep_model(df, resp, cats, conts, catMinPrev, contTargetPts, contEdge, 1, weightCol)
+ model = prep.prep_model(df, resp, cats, conts, catMinPrev, contTargetPts, contEdge, 1, weightCol, bandConts)
  return model
-
-def prep_multiplicative_model(inputDf, resp, cats, conts, catMinPrev=0.01, contTargetPts=5, contEdge=0.01, weightCol=None):
- return prep_model(inputDf, resp, cats, conts, catMinPrev=0.01, contTargetPts=5, contEdge=0.01, weightCol=None)
 
 
 def train_gamma_model(inputDf, resp, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal", momentum=0):
@@ -709,9 +706,9 @@ def prep_cratio_models(inputDf, resp, cats, conts, N=1, fractions=None, catMinPr
   models.append(model)
  return models
 
-def train_cratio_models(inputDf, resp, nrounds, lrs, models, pens=None, weightCol=None, staticFeats=[], minRela=0.1, prints="normal", momentum=0):
+def train_cratio_models(inputDf, resp, nrounds, lrs, models, pens=None, weightCol=None, staticFeats=[], prints="normal", momentum=0):
  df = inputDf.reset_index(drop=True)
- models = actual_modelling.train_models([df], resp, nrounds, lrs, models, weightCol, staticFeats, lras=calculus.addsmoothing_LRAs, lossgrads=[[calculus.Logistic_grad]], links=[calculus.Cratio_mlink], linkgrads=[[calculus.Cratio_mlink_grad]*len(models)], pens=pens, minRela=minRela, prints=prints, momentum=momentum)
+ models = actual_modelling.train_models([df], resp, nrounds, lrs, models, weightCol, staticFeats, lras=calculus.addsmoothing_LRAs, lossgrads=[[calculus.Logistic_grad]], links=[calculus.Cratio_mlink], linkgrads=[[calculus.Cratio_mlink_grad]*len(models)], pens=pens, prints=prints, momentum=momentum)
  return models
 
 def interxhunt_cratio_models(inputDf, resp, cats, conts, models, silent=False, weightCol=None, filename="suggestions"):

@@ -7,6 +7,8 @@ import misc
 import calculus
 import wraps
 import viz
+import radify
+
 
 
 #Weighted Poisson proof of concept
@@ -61,8 +63,7 @@ print(markedDf)
 df["Predicted"] = pred
 df["Actual"] = df['y']
 
-viz.draw_cat_AvE(df, 'cat1', 'Predicted', 'Actual') 
-viz.draw_cont_AvE(df, 'cont1', 'Predicted', 'Actual') 
+viz.draw_AvE(df, 'cat1', 'Predicted', 'Actual')
 
 #===
 
@@ -134,69 +135,68 @@ wraps.interxhunt_gnormal_models(df,'y',cats,conts,models, filename="suggestions_
 
 wraps.viz_gnormal_models(models, "Gnormal")
 
+#Tobit proof of concept (removed for taking too long!)
 
+if False:
+	df = pd.read_csv('gnormal.csv')
+	cdf = df[df['censored']].reset_index()
+	udf = df[~df['censored']].reset_index()
 
-#Tobit proof of concept
+	cats=[]
+	conts=["x"]
 
-df = pd.read_csv('gnormal.csv')
-cdf = df[df['censored']].reset_index()
-udf = df[~df['censored']].reset_index()
+	models = wraps.prep_gamma_models(udf, 'y', cats, conts, 1)
+	models = wraps.train_gamma_models(udf, 'y', 1000, [0.1], models)
 
-cats=[]
-conts=["x"]
+	print(models)
 
-models = wraps.prep_gamma_models(udf, 'y', cats, conts, 1)
-models = wraps.train_gamma_models(udf, 'y', 1000, [0.1], models)
+	models = wraps.gnormalize_gamma_models(models, udf, "y", cats, conts, 20)
+	models = wraps.train_gnormal_models([udf,cdf], 'y', 1000, [0.1,0.005], models)
 
-print(models)
+	pred = wraps.predict_from_gnormal(df, models)
+	predErrPct = wraps.predict_error_from_gnormal(df, models)
 
-models = wraps.gnormalize_gamma_models(models, udf, "y", cats, conts, 20)
-models = wraps.train_gnormal_models([udf,cdf], 'y', 1000, [0.1,0.005], models)
+	df["PREDICTED"]=pred
 
-pred = wraps.predict_from_gnormal(df, models)
-predErrPct = wraps.predict_error_from_gnormal(df, models)
+	print(df[["PREDICTED","true_y"]])
 
-df["PREDICTED"]=pred
+	print(df["PREDICTED"].mean())
+	print(df["true_y"].mean())
 
-print(df[["PREDICTED","true_y"]])
+	print(models)
 
-print(df["PREDICTED"].mean())
-print(df["true_y"].mean())
+	wraps.viz_gnormal_models(models, "Tobit")
 
-print(models)
+	#Twosided Tobit proof of concept
 
-wraps.viz_gnormal_models(models, "Tobit")
+	df = pd.read_csv('gnormal.csv')
+	cdf = df[df['censored']].reset_index()
+	udf = df[~df['censored']].reset_index()
 
-#Twosided Tobit proof of concept
+	cats=[]
+	conts=["x"]
 
-df = pd.read_csv('gnormal.csv')
-cdf = df[df['censored']].reset_index()
-udf = df[~df['censored']].reset_index()
+	models = wraps.prep_gamma_models(udf, 'y', cats, conts, 1)
+	models = wraps.train_gamma_models(udf, 'y', 1000, [0.1], models)
 
-cats=[]
-conts=["x"]
+	print(models)
 
-models = wraps.prep_gamma_models(udf, 'y', cats, conts, 1)
-models = wraps.train_gamma_models(udf, 'y', 1000, [0.1], models)
+	models = wraps.gnormalize_gamma_models(models, udf, "y", cats, conts, 20)
+	models = wraps.train_doublecensored_gnormal_models([udf,cdf], ['y','censor1_y','censor2_y'], 3000, [0.01,0.005], models)
 
-print(models)
+	pred = wraps.predict_from_gnormal(df, models)
+	predErrPct = wraps.predict_error_from_gnormal(df, models)
 
-models = wraps.gnormalize_gamma_models(models, udf, "y", cats, conts, 20)
-models = wraps.train_doublecensored_gnormal_models([udf,cdf], ['y','censor1_y','censor2_y'], 3000, [0.01,0.005], models)
+	df["PREDICTED"]=pred
 
-pred = wraps.predict_from_gnormal(df, models)
-predErrPct = wraps.predict_error_from_gnormal(df, models)
+	print(df[["PREDICTED","true_y"]])
 
-df["PREDICTED"]=pred
+	print(df["PREDICTED"].mean())
+	print(df["true_y"].mean())
 
-print(df[["PREDICTED","true_y"]])
+	print(models)
 
-print(df["PREDICTED"].mean())
-print(df["true_y"].mean())
-
-print(models)
-
-wraps.viz_gnormal_models(models, "Tobit2")
+	wraps.viz_gnormal_models(models, "Tobit2")
 
 #Additive Proof of Concept
 
@@ -244,7 +244,7 @@ models = wraps.gnormalize_gamma_models([model], df, "y", cats, conts, 4)
 
 print(pred, predErrPct)
 
-models = wraps.train_gnormal_models(df, 'y', 2000, [0.0001,0.0001], models, staticFeats=["start"], prints="verbose")
+models = wraps.train_gnormal_models(df, 'y', 2000, [0.0001,0.0001], models, staticFeats=["start"])
 
 print(models)
 pred = wraps.predict_from_gnormal(df, models)
@@ -254,7 +254,7 @@ print(pred, predErrPct)
 
 wraps.interxhunt_gnormal_models(df,'y',cats,conts,models, filename="suggestions_gnormadj")
 
-wraps.viz_gnormal_models(models, "Gnormallized Adjustment")
+wraps.viz_gnormal_models(models, "Gnormalized Adjustment")
 
 #---
 
@@ -334,3 +334,7 @@ print(misc.predict(df, model))
 wraps.viz_additive_model(model, "flink")
 
 #Flink also works for multiples, in both senses of the word!
+
+#---
+
+#(I put the banding demo in do_everything_cake.py)

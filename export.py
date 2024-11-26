@@ -83,21 +83,10 @@ def uniquify_model(model, df):
 
 def find_max_len(model, multip=1):
  ml=0
- for col in model['conts']:
-  if (len(model['conts'][col])*multip)>ml:
-   ml = (len(model['conts'][col])*multip)
  for col in model['cats']:
   if (len(model['cats'][col]['uniques'])+1)>ml:
    ml = len(model['cats'][col]['uniques'])+1
  return ml
-
-def get_cont_inputs(cont, detail=1):
- op=[]
- for i in range(len(cont)-1):
-  for j in range(detail):
-   op.append(float(cont[i][0]*(detail-j) + cont[i+1][0]*j)/detail)
- op.append(cont[-1][0])
- return op
 
 def linesify_catcat(catcat):
  
@@ -126,48 +115,6 @@ def linesify_catcat(catcat):
  
  return op
 
-def linesify_catcont(catcont, detail=1):
- 
- skeys = util.get_sorted_keys(catcont["uniques"])
- contPuts=get_cont_inputs(catcont['OTHER'], detail)
- 
- op=[',']*(len(contPuts)+2)
- 
- #Headline
- op[0]=op[0]+','
- for k in skeys:
-  op[0] = op[0]+","+k
- op[0] = op[0]+",OTHER"
- 
- #Work downwards
- for i in range(len(contPuts)):
-  op[i+1]=op[i+1]+','+str(contPuts[i])
-  for j in range(len(skeys)):
-   op[i+1] = op[i+1]+','+str(misc.get_effect_of_this_catcont_on_single_input(skeys[j],contPuts[i], catcont))
-  op[i+1] = op[i+1]+','+str(misc.get_effect_of_this_catcont_on_single_input("OTHER",contPuts[i], catcont))
- 
- return op
-
-def linesify_contcont(contcont, detail=1):
- 
- contPuts1=get_cont_inputs(contcont, detail)
- contPuts2=get_cont_inputs(contcont[0][1], detail)
- 
- op=[',']*(len(contPuts2)+2)
- 
- #Headline
- op[0]=op[0]+','
- for contPut in contPuts1:
-  op[0] = op[0]+","+str(contPut)
- 
- #Work downwards
- for i in range(len(contPuts2)):
-  op[i+1]=op[i+1]+','+str(contPuts2[i])
-  for j in range(len(contPuts1)):
-   op[i+1] = op[i+1]+','+str(misc.get_effect_of_this_contcont_on_single_input(contPuts1[j],contPuts2[i], contcont))
- 
- return op
-
 def export_model(model, detail=1, filename="op.csv"):
  lines = ['']*(find_max_len(model, detail)+4)
  
@@ -180,18 +127,6 @@ def export_model(model, detail=1, filename="op.csv"):
    lines[l] = lines[l]+","+str(model['BASE_VALUE'])
   else:
    lines[l] = lines[l]+','
- 
- #Add conts
- 
- if 'conts' in model:
-  for col in model['conts']:
-   lines[0] = lines[0]+',,,'
-   lines[1] = lines[1]+',,'+col+','
-   contPuts=get_cont_inputs(model['conts'][col], detail)
-   for i in range(len(contPuts)):
-     lines[i+2] = lines[i+2] + ',,' + str(contPuts[i]) + ',' + str(misc.get_effect_of_this_cont_on_single_input(contPuts[i], model['conts'][col]))
-   for l in range(len(contPuts)+2, len(lines)):
-    lines[l] = lines[l]+',,,'
  
  #Add cats
  if 'cats' in model:
@@ -206,15 +141,6 @@ def export_model(model, detail=1, filename="op.csv"):
     lines[l] = lines[l]+',,,'
  
  #Interactions
- if 'catcats' in model:
-  for cols in model['catcats']:
-   extra = linesify_catcat(model['catcats'][cols])
-   lines = lines + [',,'+cols] + extra + ['']
- 
- if 'catconts' in model:
-  for cols in model['catconts']:
-   extra = linesify_catcont(model['catconts'][cols], detail)
-   lines = lines + [',,'+cols] + extra + ['']
  
  if 'contconts' in model:
   for cols in model['contconts']:

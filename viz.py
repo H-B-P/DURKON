@@ -317,11 +317,6 @@ def draw_contcont_pdp_heatmap(contcont, targetSpan=0, name="graph", model=0, def
  X1 = get_cont_inputs(contcont, detail)
  X2 = get_cont_inputs(contcont[0][1], detail)
  
- #for pt in contcont:
- # X1.append(pt[0])
- #for pt in contcont[0][1]:
- # X2.append(pt[0])
- 
  for i in range(len(X1)-1):
   newYs=[]
   for j in range(len(X2)-1):
@@ -349,10 +344,10 @@ def draw_contcont_pdp_heatmap(contcont, targetSpan=0, name="graph", model=0, def
   plotly.offline.plot(fig, filename=folder+"/"+name+'__'+model+'.html', auto_open = False)
  
 
-def draw_cat_AvE(df, col, predCol, actCol, cat=None, catMinPrev=0.01, weightCol=None, folder="graphs"):
+def draw_AvE(df, col, predCol, actCol, cat=None, catMinPrev=0.01, weightCol=None, folder="graphs", showFeatEffect=True): #Cats only, because that's all the standard paradigm permits.
  
  try:
-  os.mkdir("graphs")
+  os.mkdir(folder)
  except:
   pass
  
@@ -368,6 +363,7 @@ def draw_cat_AvE(df, col, predCol, actCol, cat=None, catMinPrev=0.01, weightCol=
  predList=[]
  actList=[]
  prevList=[]
+ effectList=[]
  
  for u in cat["uniques"]:
   sDf = df[df[col]==u]
@@ -376,6 +372,7 @@ def draw_cat_AvE(df, col, predCol, actCol, cat=None, catMinPrev=0.01, weightCol=
    predList.append(sum(sDf["WEIGHT_COLUMN"]*sDf[predCol])/sum(sDf["WEIGHT_COLUMN"]))
    actList.append(sum(sDf["WEIGHT_COLUMN"]*sDf[actCol])/sum(sDf["WEIGHT_COLUMN"]))
    prevList.append(sum(sDf["WEIGHT_COLUMN"]))
+   effectList.append(cat["uniques"][u]*sum(df["WEIGHT_COLUMN"]*df[actCol])/sum(df["WEIGHT_COLUMN"]))
  
  sDf = df[~df[col].isin(cat["uniques"])]
  if len(sDf)>0:
@@ -383,145 +380,71 @@ def draw_cat_AvE(df, col, predCol, actCol, cat=None, catMinPrev=0.01, weightCol=
   predList.append(sum(sDf["WEIGHT_COLUMN"]*sDf[predCol])/sum(sDf["WEIGHT_COLUMN"]))
   actList.append(sum(sDf["WEIGHT_COLUMN"]*sDf[actCol])/sum(sDf["WEIGHT_COLUMN"]))
   prevList.append(sum(sDf["WEIGHT_COLUMN"]))
+  effectList.append(cat["OTHER"]*sum(df["WEIGHT_COLUMN"]*df[actCol])/sum(df["WEIGHT_COLUMN"]))
  
- bar_trace1 = go.Bar(
-     x=bucketList,
-     y=predList,
-     name='Predicted',
-     marker=dict(color='blue')
- )
-
- bar_trace2 = go.Bar(
-     x=bucketList,
-     y=actList,
-     name='Actual',
-     marker=dict(color='red')
- )
- 
- line_trace = go.Scatter(
+ bar_trace = go.Bar(
      x=bucketList,
      y=prevList,
      name='Prevalence',
+     marker=dict(color='yellow')
+ )
+ 
+ line_trace_p = go.Scatter(
+     x=bucketList,
+     y=predList,
+     name='Predicted',
      mode='lines+markers',
      yaxis='y2',
-     line=dict(color='green')
+     line=dict(color='blue'),
+     marker=dict(color='blue',symbol='square')
+ )
+ 
+ line_trace_a = go.Scatter(
+     x=bucketList,
+     y=actList,
+     name='Actual',
+     mode='lines+markers',
+     yaxis='y2',
+     line=dict(color='red'),
+     marker=dict(color='red',symbol='diamond')
+ )
+ 
+ line_trace_e = go.Scatter(
+     x=bucketList,
+     y=effectList,
+     name='Feature Effect',
+     mode='lines+markers',
+     yaxis='y2',
+     line=dict(color='green'),
+     marker=dict(color='green',symbol='circle')
  )
  
  layout = go.Layout(
-     title='Side-by-Side Bars with Superimposed Line Plot',
-     yaxis=dict(title='Response'),
+     title='AvE for '+col,
+     yaxis=dict(title='Prevalence',
+         side='right'),
      yaxis2=dict(
-         title='Prevalence',
+         title='Response',
          overlaying='y',
-         side='right',
-         showgrid=False
-     ),
-    barmode="group"
+         side='left',
+         showgrid=False,
+         rangemode='tozero'
+     )
  )
  
- fig = go.Figure(data=[bar_trace1, bar_trace2, line_trace], layout=layout)
- 
- fig.update_layout(title="AvE for "+col)
- 
- plotly.offline.plot(fig, filename=folder+"/AvE_for_"+col+'.html', auto_open = False)
- 
-def draw_cont_AvE(df, col, predCol, actCol, cont=None, contTargetPts=5, contEdge=0.01, weightCol=None, folder="graphs"):
- 
- try:
-  os.mkdir("graphs")
- except:
-  pass
- 
- if weightCol==None:
-  df["WEIGHT_COLUMN"] = 1
+ if showFeatEffect:
+  fig = go.Figure(data=[bar_trace, line_trace_p, line_trace_a, line_trace_e], layout=layout)
  else:
-  df["WEIGHT_COLUMN"] = df[weightCol]
- 
- if cont==None:
-  cont = prep.get_cont_feat(df, col, contTargetPts, contEdge, 1, weightCol)
- 
- bucketList=[]
- predList=[]
- actList=[]
- prevList=[]
- 
- sDf = df[df[col]<cont[0][0]]
- if len(sDf)>0:
-   bucketList.append(col+"<"+str(cont[0][0]))
-   predList.append(sum(sDf["WEIGHT_COLUMN"]*sDf[predCol])/sum(sDf["WEIGHT_COLUMN"]))
-   actList.append(sum(sDf["WEIGHT_COLUMN"]*sDf[actCol])/sum(sDf["WEIGHT_COLUMN"]))
-   prevList.append(sum(sDf["WEIGHT_COLUMN"]))
- 
- for i in range(len(cont)-1):
-  sDf = df[df[col]>=cont[i][0]].reset_index(drop=True)
-  sDf = df[df[col]<cont[i+1][0]].reset_index(drop=True)
-  if len(sDf)>0:
-   bucketList.append(str(cont[i][0])+"<="+col+"<"+str(cont[i+1][0]))
-   predList.append(sum(sDf["WEIGHT_COLUMN"]*sDf[predCol])/sum(sDf["WEIGHT_COLUMN"]))
-   actList.append(sum(sDf["WEIGHT_COLUMN"]*sDf[actCol])/sum(sDf["WEIGHT_COLUMN"]))
-   prevList.append(sum(sDf["WEIGHT_COLUMN"]))
- 
- sDf = df[df[col]>=cont[-1][0]]
- if len(sDf)>0:
-   bucketList.append(str(cont[-1][0])+"<="+col)
-   predList.append(sum(sDf["WEIGHT_COLUMN"]*sDf[predCol])/sum(sDf["WEIGHT_COLUMN"]))
-   actList.append(sum(sDf["WEIGHT_COLUMN"]*sDf[actCol])/sum(sDf["WEIGHT_COLUMN"]))
-   prevList.append(sum(sDf["WEIGHT_COLUMN"]))
- 
- sDf = df[pd.to_numeric(df[col], errors='coerce').isna()]
- if len(sDf)>0:
-  bucketList.append("OTHER")
-  predList.append(sum(sDf["WEIGHT_COLUMN"]*sDf[predCol])/sum(sDf["WEIGHT_COLUMN"]))
-  actList.append(sum(sDf["WEIGHT_COLUMN"]*sDf[actCol])/sum(sDf["WEIGHT_COLUMN"]))
-  prevList.append(sum(sDf["WEIGHT_COLUMN"]))
- 
- bar_trace1 = go.Bar(
-     x=bucketList,
-     y=predList,
-     name='Predicted',
-     marker=dict(color='blue')
- )
-
- bar_trace2 = go.Bar(
-     x=bucketList,
-     y=actList,
-     name='Actual',
-     marker=dict(color='red')
- )
- 
- line_trace = go.Scatter(
-     x=bucketList,
-     y=prevList,
-     name='Prevalence',
-     mode='lines+markers',
-     yaxis='y2',
-     line=dict(color='green')
- )
- 
- layout = go.Layout(
-     title='Side-by-Side Bars with Superimposed Line Plot',
-     yaxis=dict(title='Response'),
-     yaxis2=dict(
-         title='Prevalence',
-         overlaying='y',
-         side='right',
-         showgrid=False
-     ),
-    barmode="group"
- )
- 
- fig = go.Figure(data=[bar_trace1, bar_trace2, line_trace], layout=layout)
+  fig = go.Figure(data=[bar_trace, line_trace_p, line_trace_a], layout=layout)
  
  fig.update_layout(title="AvE for "+col)
  
  plotly.offline.plot(fig, filename=folder+"/AvE_for_"+col+'.html', auto_open = False)
-
 
 if __name__=="__main__":
  df = pd.read_csv("train.csv")
  df["pred"] = df["Width"]*df["Height"]
- draw_cat_AvE(df, "Flavour", "pred", "Price")
- draw_cont_AvE(df, "Icing Thickness", "pred", "Price") 
+ draw_AvE(df, "Flavour", "pred", "Price")
 
 if False:
  

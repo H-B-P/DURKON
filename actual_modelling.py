@@ -10,13 +10,14 @@ import calculus
 import pena
 import rele
 import prep
+import constraints
 
-#pens, lrs, staticFeatLists, specificPenses and models are per model
+#pens, lrs, staticFeatLists, specificPenses, traintLists and models are per model
 #relelistlists are listed per df, then per model
 #link, linkgrad are per pred; linkgrad is then per model
 #lossgrad is per df, then per pred
 
-def train_models(inputDfs, targets, nrounds, lrs, startingModels, weightCol=None, staticFeats = [], lras=None, lossgrads=[[calculus.Gauss_grad]], links=[calculus.Unity_link], linkgrads=[[calculus.Unity_link_grad]], pens=None, minRela=None, prints="verbose", record=False, momentum=0.01):
+def train_models(inputDfs, targets, nrounds, lrs, startingModels, weightCol=None, staticFeats = [], lras=None, lossgrads=[[calculus.Gauss_grad]], links=[calculus.Unity_link], linkgrads=[[calculus.Unity_link_grad]], pens=None, traints=None, prints="verbose", record=False, momentum=0.01):
  
  history=[]
  
@@ -197,7 +198,7 @@ def train_models(inputDfs, targets, nrounds, lrs, startingModels, weightCol=None
      linkgradient = linkgradients[p][m]
      lossgradient = lossgradients[p]
      
-     if type(linkgradient)==type(pd.Series([])):
+     if type(linkgradient)==type(pd.Series([0])):
       
       if "flink" in model:
        if prints=="verbose":
@@ -350,9 +351,6 @@ def train_models(inputDfs, targets, nrounds, lrs, startingModels, weightCol=None
     else:
      models[m] = pena.penalize_model(models[m], pens[m]*lrs[m], 1)
   
-  if minRela!=None:
-   models = [misc.enforce_min_rela(model, minRela) for model in models]
-  
   #Momentumize!
   
   if type(record)==type([]):
@@ -362,13 +360,20 @@ def train_models(inputDfs, targets, nrounds, lrs, startingModels, weightCol=None
       diff = misc.subtract_models(record[-1][m], record[-2][m])
       models[m] = misc.add_models(models[m], misc.mult_model(diff, momentum))
   
+  #Constrain!
+  
+  if traints!=None:
+   for m in range(len(models)):
+    for constraintFunction in traints[m]:
+     models[m] = constraintFunction(models[m])
+  
   history.append(models)
  
  if record: 
   return models, history
  return models
 
-def train_model(inputDf, target, nrounds, lr, startingModel, weightCol=None, staticFeats = [], pen=0, specificPens={}, lossgrad=calculus.Poisson_grad, link=calculus.Unity_link, linkgrad=calculus.Unity_link_grad, minRela=None, prints="verbose", record=False, momentum=0.01):
+def train_model(inputDf, target, nrounds, lr, startingModel, weightCol=None, staticFeats = [], pen=0, specificPens={}, lossgrad=calculus.Poisson_grad, link=calculus.Unity_link, linkgrad=calculus.Unity_link_grad, traints=None, prints="verbose", record=False, momentum=0.01):
  
  history=[]
  
@@ -587,9 +592,6 @@ def train_model(inputDf, target, nrounds, lr, startingModel, weightCol=None, sta
     model = pena.penalize_model(model, pen*lr, 0, specificPens)
    else:
     model = pena.penalize_model(model, pen*lr, 1, specificPens)
-   
-   if minRela!=None:
-    model = misc.enforce_min_rela(model, minRela)
   
   #Momentumize!
   
@@ -598,6 +600,10 @@ def train_model(inputDf, target, nrounds, lr, startingModel, weightCol=None, sta
     if len(record)>1:
      diff = misc.subtract_models(record[-1], record[-2])
      model = misc.add_models(model, misc.mult_model(diff, momentum))
+  
+  if traints!=None:
+   for constraintFunction in traints:
+    model = constraintFunction(model)
   
   history.append(model)
  
@@ -609,6 +615,17 @@ def train_model(inputDf, target, nrounds, lr, startingModel, weightCol=None, sta
 
 
 
+if __name__ == '__main__':
+ df = pd.DataFrame({"cont1":[1,2,3,4,5,6,7,8,9,10],"y":[0,1,2,3,2,3,2,3,4,5]})
+ traintMono = constraints.get_monotonize_this_model({},{"cont1":1})
+ model = {"BASE_VALUE":2.5,"conts":{"cont1":[[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[9,0],[10,0]]}, "cats":{},'featcomb':'addl'}
+ model = train_model(df, "y", 100, 0.1, model, lossgrad=calculus.Gauss_grad, traints=[traintMono])
+ print(model)
+ 
+ traintRela = constraints.get_enforce_min_rela(0)
+ model = {"BASE_VALUE":2.5,"conts":{"cont1":[[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[9,0],[10,0]]}, "cats":{},'featcomb':'addl'}
+ model = train_model(df, "y", 100, 0.1, model, lossgrad=calculus.Gauss_grad, traints=[traintRela, traintMono])
+ print(model)
 
 if False:#__name__ == '__main__':
  df = pd.DataFrame({"cont1":[0,1,0,1],"cat1":[0,0,1,1],"y":[0,1,1,4]})
