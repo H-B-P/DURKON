@@ -158,11 +158,26 @@ def get_catcat_feat(df, cat1, cat2, catMinPrev1=0.1, catMinPrev2=0.1, defaultVal
  
  return feat1
 
-def add_catcat_to_model(model, df, cat1, cat2, catMinPrev1=0.1, catMinPrev2=0.1, defaultValue=1, weightCol=None, replace=False):
+def merget_catcat_feat(model, cat1, cat2, defaultValue=1):
+ 
+ feat1 = copy.deepcopy(model["cats"][cat1])
+ feat2 = copy.deepcopy(model["cats"][cat2])
+ 
+ feat1["OTHER"]=copy.deepcopy(feat2)
+ 
+ for u in feat1["uniques"]:
+  feat1["uniques"][u]=copy.deepcopy(feat2)
+ 
+ return feat1
+
+def add_catcat_to_model(model, df, cat1, cat2, catMinPrev1=0.1, catMinPrev2=0.1, defaultValue=1, weightCol=None, replace=False, merget=False):
  
  if "catcats" not in model:
   model["catcats"]={}
- model['catcats'][cat1 + " X " + cat2] = get_catcat_feat(df, cat1, cat2, catMinPrev1, catMinPrev2, defaultValue, weightCol)
+ if merget:
+  model['catcats'][cat1 + " X " + cat2] = merget_catcat_feat(model, cat1, cat2, defaultValue)
+ else:
+  model['catcats'][cat1 + " X " + cat2] = get_catcat_feat(df, cat1, cat2, catMinPrev1, catMinPrev2, defaultValue, weightCol)
  
  if replace:
   if "cats" in model:
@@ -200,10 +215,10 @@ def get_banded_cont_feat(df, cont, contTargetPts=9, contEdge=0.1, defaultValue=1
   if newpt not in pts:
    pts.append(newpt)
  
- feat["uniques"]["<"+str(pts[0])]=defaultValue
+ feat["uniques"]["< "+str(pts[0])]=defaultValue
  for i in range(len(pts)-1):
-  feat["uniques"][str(pts[i])+"-"+str(pts[i+1])]=defaultValue
- feat["uniques"][">="+str(pts[-1])]=defaultValue
+  feat["uniques"][str(pts[i])+" to "+str(pts[i+1])]=defaultValue
+ feat["uniques"][">= "+str(pts[-1])]=defaultValue
  
  return feat, pts
 
@@ -224,10 +239,10 @@ def band_df(df, model):
  if "bandings" in model:
   for col in model["bandings"]:
    pts = model["bandings"][col]
-   bandedDf.loc[df[col]<pts[0],col] = "<"+str(pts[0])
+   bandedDf.loc[df[col]<pts[0],col] = "< "+str(pts[0])
    for i in range(len(model["bandings"][col])-1):
-    bandedDf.loc[(df[col]>=pts[i])&(df[col]<pts[i+1]),col] = str(pts[i])+"-"+str(pts[i+1])
-   bandedDf.loc[df[col]>=pts[-1],col] = ">="+str(pts[-1])
+    bandedDf.loc[(df[col]>=pts[i])&(df[col]<pts[i+1]),col] = str(pts[i])+" to "+str(pts[i+1])
+   bandedDf.loc[df[col]>=pts[-1],col] = ">= "+str(pts[-1])
  
  return bandedDf
 

@@ -6,21 +6,15 @@ import util
 
 exampleModel = {"BASE_VALUE":1700,"conts":{"cont1":[[0.01, 1],[0.02,1.1], [0.03, 1.06]], "cont2":[[37,1.2],[98, 0.9]]}, "cats":{"cat1":{"uniques":{"wstfgl":1.05, "florpalorp":0.92}, "OTHER":1.04}}}
 
-def uniquify_model(model, df):
+def uniquify_model(model, df, sort=False):
  newModel = copy.deepcopy(model)
- 
- if "conts" in model:
-  for col in model["conts"]:
-   uList = df[col].unique()
-   uList = [u for u in uList]
-   uList.sort()
-   newModel["conts"][col] = [[u,misc.get_effect_of_this_cont_on_single_input(u, model["conts"][col])] for u in uList]
  
  if "cats" in model:
   for col in model["cats"]:
    uList = df[col].unique()
    uList = [u for u in uList]
-   uList.sort(key=str)
+   if sort:
+    uList.sort(key=str)
    newModel["cats"][col]={"uniques":{}, "OTHER":model["cats"][col]["OTHER"]}
    for u in uList:
     newModel["cats"][col]["uniques"][u] = misc.get_effect_of_this_cat_on_single_input(u, model["cats"][col])
@@ -31,11 +25,13 @@ def uniquify_model(model, df):
    
    uList1 = df[cat1].unique()
    uList1 = [u for u in uList1]
-   uList1.sort(key=str)
+   if sort:
+    uList1.sort(key=str)
    
    uList2 = df[cat2].unique()
    uList2 = [u for u in uList2]
-   uList2.sort(key=str)
+   if sort:
+    uList2.sort(key=str)
    
    newModel["catcats"][cols]={"uniques":{}, "OTHER":{"uniques":{}, "OTHER":model["catcats"][cols]["OTHER"]["OTHER"]}}
    
@@ -46,42 +42,10 @@ def uniquify_model(model, df):
     newModel["catcats"][cols]["uniques"][u1] = {"uniques":{},"OTHER":misc.get_effect_of_this_catcat_on_single_input(u1,"SolidGoldMagikarp", model["catcats"][cols])}
     for u2 in uList2:
      newModel["catcats"][cols]["uniques"][u1]["uniques"][u2] = misc.get_effect_of_this_catcat_on_single_input(u1,u2, model["catcats"][cols])
-   
-  if "catconts" in model:
-   for cols in model["catconts"]:
-    cat, cont = cols.split(" X ")
-    
-    uList1 = df[cat].unique()
-    uList1 = [u for u in uList1]
-    uList1.sort(key=str)
-    
-    uList2 = df[cont].unique()
-    uList2 = [u for u in uList2]
-    uList2.sort()
-    
-    newModel["catconts"][cols] = {"uniques":{}, "OTHER":[[u2, misc.get_effect_of_this_catcont_on_single_input("SolidGoldMagikarp", u2, model["catconts"][cols])] for u2 in uList2]}
-    for u1 in uList1:
-     newModel["catconts"][cols]["uniques"][u1] = [[u2, misc.get_effect_of_this_catcont_on_single_input(u1, u2, model["catconts"][cols])] for u2 in uList2]
-  
-  if "contconts" in model:
-   for cols in model["contconts"]:
-    cont1, cont2 = cols.split(" X ")
-    
-    uList1 = df[cont1].unique()
-    uList1 = [u for u in uList1]
-    uList1.sort()
-    
-    uList2 = df[cont2].unique()
-    uList2 = [u for u in uList2]
-    uList2.sort()
-    
-    newModel["contconts"][cols]=[]
-    for u1 in uList1:
-     newModel["contconts"][cols].append([u1, [[u2, misc.get_effect_of_this_contcont_on_single_input(u1,u2,model["contconts"][cols])] for u2 in uList2]])
  
  return newModel
 
-def find_max_len(model, multip=1):
+def find_max_len(model):
  ml=0
  for col in model['cats']:
   if (len(model['cats'][col]['uniques'])+1)>ml:
@@ -90,33 +54,36 @@ def find_max_len(model, multip=1):
 
 def linesify_catcat(catcat):
  
- skeys1 = util.get_sorted_keys(catcat["uniques"])
- skeys2 = util.get_sorted_keys(catcat["OTHER"]["uniques"])
+ keys1 = list(catcat["uniques"].keys())#util.get_sorted_keys(catcat["uniques"])
+ keys2 = list(catcat["OTHER"]["uniques"].keys())#util.get_sorted_keys(catcat["OTHER"]["uniques"])
  
- op=[',']*(len(skeys2)+2)
+ op=[',']*(len(keys2)+2)
  
  #Headline
  op[0]=op[0]+','
- for k1 in skeys1:
-  op[0] = op[0]+","+k1
+ for k1 in keys1:
+  op[0] = op[0]+","+str(k1)
  op[0] = op[0]+",OTHER"
  
  #Work downwards
- for i in range(len(skeys2)):
-  op[i+1]=op[i+1]+','+skeys2[i]
-  for j in range(len(skeys1)):
-   op[i+1] = op[i+1]+','+str(misc.get_effect_of_this_catcat_on_single_input(skeys1[j],skeys2[i],catcat))#str(catcat['uniques'][skeys1[j]]['uniques'][skeys2[i]])
-  op[i+1] = op[i+1]+','+str(misc.get_effect_of_this_catcat_on_single_input("OTHER",skeys2[i],catcat))
+ for i in range(len(keys2)):
+  op[i+1]=op[i+1]+','+str(keys2[i])
+  for j in range(len(keys1)):
+   op[i+1] = op[i+1]+','+str(misc.get_effect_of_this_catcat_on_single_input(keys1[j],keys2[i],catcat))#str(catcat['uniques'][skeys1[j]]['uniques'][skeys2[i]])
+  op[i+1] = op[i+1]+','+str(misc.get_effect_of_this_catcat_on_single_input("OTHER",keys2[i],catcat))
  
  op[-1]=op[-1]+",OTHER"
- for j in range(len(skeys1)):
-  op[-1]=op[-1]+','+str(misc.get_effect_of_this_catcat_on_single_input(skeys1[j],"OTHER",catcat))
+ for j in range(len(keys1)):
+  op[-1]=op[-1]+','+str(misc.get_effect_of_this_catcat_on_single_input(keys1[j],"OTHER",catcat))
  op[-1]=op[-1]+','+str(misc.get_effect_of_this_catcat_on_single_input("OTHER","OTHER",catcat))
  
  return op
 
-def export_model(model, detail=1, filename="op.csv"):
- lines = ['']*(find_max_len(model, detail)+4)
+def export_model(model, filename="op.csv", sort=False):
+ lines = ['']*(find_max_len(model)+4)
+ 
+ if ("conts" in model) or ("contconts" in model) or ("catconts" in model):
+  print("WARNING: This will only export categorical features and interactions; your model contains continuous features; consider banding it!")
  
  #Add base value
  
@@ -133,7 +100,7 @@ def export_model(model, detail=1, filename="op.csv"):
   for col in model['cats']:
    lines[0] = lines[0]+',,,'
    lines[1] = lines[1]+',,'+col+','
-   keys = util.get_sorted_keys(model["cats"][col]["uniques"])
+   keys = list(model["cats"][col]["uniques"].keys())
    for i in range(len(keys)):
     lines[i+2] = lines[i+2]+',,'+str(keys[i])+','+str(model['cats'][col]['uniques'][keys[i]])
    lines[len(keys)+2] = lines[len(keys)+2] +',,OTHER,'+str(model['cats'][col]['OTHER'])
@@ -142,16 +109,15 @@ def export_model(model, detail=1, filename="op.csv"):
  
  #Interactions
  
- if 'contconts' in model:
-  for cols in model['contconts']:
-   extra = linesify_contcont(model['contconts'][cols], detail)
+ if 'catcats' in model:
+  for cols in model['catcats']:
+   extra = linesify_catcat(model['catcats'][cols])
    lines = lines + [',,'+cols] + extra + ['']
  
  #Write to file
  
  f = open(filename, "w")
  for line in lines:
-  #print(line)
   f.write(line+'\n')
  f.close()
 
@@ -163,4 +129,3 @@ if __name__ == '__main__':
  uModel = uniquify_model(exampleModel, exampleDf)
  
  print(uModel)
- #print()
