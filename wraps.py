@@ -9,6 +9,7 @@ import prep
 import misc
 import calculus
 import viz
+import constraints
 
 ALPHABET="ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -706,9 +707,9 @@ def prep_cratio_models(inputDf, resp, cats, conts, N=1, fractions=None, catMinPr
   models.append(model)
  return models
 
-def train_cratio_models(inputDf, resp, nrounds, lrs, models, pens=None, weightCol=None, staticFeats=[], prints="normal", momentum=0):
+def train_cratio_models(inputDf, resp, nrounds, lrs, models, pens=None, weightCol=None, staticFeats=[], prints="normal", momentum=0, minrela=0.01):
  df = inputDf.reset_index(drop=True)
- models = actual_modelling.train_models([df], resp, nrounds, lrs, models, weightCol, staticFeats, lras=calculus.addsmoothing_LRAs, lossgrads=[[calculus.Logistic_grad]], links=[calculus.Cratio_mlink], linkgrads=[[calculus.Cratio_mlink_grad]*len(models)], pens=pens, prints=prints, momentum=momentum)
+ models = actual_modelling.train_models([df], resp, nrounds, lrs, models, weightCol, staticFeats, lras=calculus.addsmoothing_LRAs, lossgrads=[[calculus.Logistic_grad]], links=[calculus.Cratio_mlink], linkgrads=[[calculus.Cratio_mlink_grad]*len(models)], pens=pens, prints=prints, momentum=momentum, traints=[[constraints.get_enforce_min_rela(minrela)]])
  return models
 
 def interxhunt_cratio_models(inputDf, resp, cats, conts, models, silent=False, weightCol=None, filename="suggestions"):

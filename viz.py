@@ -119,7 +119,7 @@ def draw_cat_pdp(dyct, targetSpan=0, name="graph", model=0, defaultValue=1, leew
   fig.write_image(folder+"/"+name+"__"+model+".png")
   plotly.offline.plot(fig, filename=folder+"/"+name+'__'+model+'.html', auto_open = False)
 
-def draw_catcat_pdp(catcat, targetSpan=0, name="graph", model=0, defaultValue=1, leeway=0.05, ytitle="Relativity", cat1="", cat2="", shapes=['/', '\\', 'x', '-', '|', '+', '.'], colors = ['red','orange','yellow','green','blue','indigo','violet'], folder="graphs", otherName="OTHER"):
+def draw_catcat_pdp(catcat, targetSpan=0, name="graph", model=0, defaultValue=1, leeway=0.05, ytitle="Relativity", cat1="", cat2="", shapes=['/', '\\', 'x', '-', '|', '+', '.',]*10, colors = ['red','orange','yellow','green','blue','indigo','violet','black','white'], folder="graphs", otherName="OTHER"):
  
  bars=[]
  

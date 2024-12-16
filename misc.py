@@ -185,7 +185,7 @@ def get_effect_of_this_cont_on_single_input(x, cont):
 
 def get_effect_of_this_cont_col(ser, cont):
  x = ser
- effectOfCol = pd.Series([1]*len(ser))
+ effectOfCol = pd.Series([1.0]*len(ser))
  effectOfCol.loc[(x<=cont[0][0])] = cont[0][1] #Everything too early gets with the program
  for i in range(len(cont)-1):
   x1 = cont[i][0]
@@ -203,7 +203,7 @@ def get_effect_of_this_cat_on_single_input(x, cat): #slightly roundabout approac
  return cat["OTHER"]
 
 def get_effect_of_this_cat_col(ser, cat):
- effectOfCol = pd.Series([cat["OTHER"]]*len(ser))
+ effectOfCol = pd.Series([float(cat["OTHER"])]*len(ser))
  for unique in cat["uniques"]:
   effectOfCol[ser==unique] = cat["uniques"][unique]
  return effectOfCol
@@ -215,7 +215,7 @@ def get_effect_of_this_catcat_on_single_input(x1, x2, catcat):
  return get_effect_of_this_cat_on_single_input(x2, catcat["OTHER"])
 
 def get_effect_of_this_catcat(ser1, ser2, catcat):
- effectOfCol = pd.Series([catcat["OTHER"]["OTHER"]]*len(ser1))
+ effectOfCol = pd.Series([float(catcat["OTHER"]["OTHER"])]*len(ser1))
  for unique1 in catcat['uniques']:
   for unique2 in catcat['uniques'][unique1]['uniques']:
    effectOfCol[(ser1==unique1) & (ser2==unique2)] = catcat['uniques'][unique1]['uniques'][unique2]
@@ -233,7 +233,7 @@ def get_effect_of_this_catcont_on_single_input(x1, x2, catcont):
 def get_effect_of_this_catcont(ser1, ser2, catcont):
  
  x = ser2
- effectOfCol = pd.Series([1]*len(ser1))
+ effectOfCol = pd.Series([1.0]*len(ser1))
  
  for unique in catcont['uniques']:
   effectOfCol.loc[(ser1==unique) & (x<=catcont['uniques'][unique][0][0])] = catcont['uniques'][unique][0][1] #Everything too early gets with the program
@@ -268,7 +268,7 @@ def get_effect_of_this_contcont(ser1, ser2, contcont): #we are using x and y to 
  
  x = ser1
  y = ser2
- effectOfCol = pd.Series([1]*len(ser1))
+ effectOfCol = pd.Series([1.0]*len(ser1))
  
  #Corners get with the program
  
@@ -478,6 +478,7 @@ def roundify_contcont(contcont, sf=5):
 
 
 def explain(model, sf=5):
+ model=util.denump(model)
  print(model)
  print("BASE_VALUE", round_to_sf(model["BASE_VALUE"], sf))
  if "flink" in model:

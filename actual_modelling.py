@@ -370,8 +370,8 @@ def train_models(inputDfs, targets, nrounds, lrs, startingModels, weightCol=None
   history.append(models)
  
  if record: 
-  return models, history
- return models
+  return util.denump(models), util.denump(history)
+ return util.denump(models)
 
 def train_model(inputDf, target, nrounds, lr, startingModel, weightCol=None, staticFeats = [], pen=0, specificPens={}, lossgrad=calculus.Poisson_grad, link=calculus.Unity_link, linkgrad=calculus.Unity_link_grad, traints=None, prints="verbose", record=False, momentum=0.01):
  
@@ -610,8 +610,8 @@ def train_model(inputDf, target, nrounds, lr, startingModel, weightCol=None, sta
  
  
  if record:
-  return model, history
- return model
+  return util.denump(model), util.denump(history)
+ return util.denump(model)
 
 
 

@@ -22,3 +22,15 @@ def get_sorted_keys(d):
  keys = [c for c in d]
  keys.sort(key=str)
  return keys
+
+
+def denump(obj):
+ if isinstance(obj, dict):
+  return {denump(k):denump(v) for k, v in obj.items()}
+ if isinstance(obj, list):
+  return [denump(x) for x in obj]
+ if isinstance(obj, np.int64):
+  return int(obj)
+ if isinstance(obj, np.float64):
+  return float(obj)
+ return obj
