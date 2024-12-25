@@ -88,6 +88,35 @@ def de_feat(model, defaultValue=1): #Not expanded to interxes
  
  return newModel
 
+def simplify_cont(cont, pe):
+ scont = copy.deepcopy(cont)
+ 
+ spsn=0
+ while spsn<(len(scont)-2):
+  epsn = len(scont)-1
+  while epsn>spsn:
+   valid = True
+   print(scont)
+   print(spsn,epsn)
+   gr = (scont[spsn][1]-scont[epsn][1])/(scont[spsn][0]-scont[epsn][0])
+   for i in range(spsn+1,epsn):
+    target = scont[spsn][1] + gr*(scont[i][0]-scont[spsn][0])
+    if abs(target-scont[i][1])>pe:
+     valid = False
+   if valid:
+    for i in range(epsn-spsn-1):
+     del scont[spsn+1]
+    epsn=spsn
+   else:
+    epsn-=1
+  spsn+=1
+ return scont
+
+def simplify_conts(model, pe): #This technically belongs in misc but realistically the only time you'd use it is on something trained with penalize_conts_complexity
+ for c in model["conts"]:
+  model["conts"][c] = simplify_cont(model["conts"][c], pe)
+ return model
+
 def get_effect_of_this_cont_col_from_relevances(reles, model, col, defaultValue=1):
  postmultmat = np.array([pt[1] for pt in model["conts"][col]]+[defaultValue])
  return np.matmul(reles,postmultmat)

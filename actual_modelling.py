@@ -7,17 +7,16 @@ import time
 import util
 import misc
 import calculus
-import pena
 import rele
 import prep
-import constraints
+import impose
 
-#pens, lrs, staticFeatLists, specificPenses, traintLists and models are per model
+#lrs, staticFeatLists, imposnLists and models are per model
 #relelistlists are listed per df, then per model
 #link, linkgrad are per pred; linkgrad is then per model
 #lossgrad is per df, then per pred
 
-def train_models(inputDfs, targets, nrounds, lrs, startingModels, weightCol=None, staticFeats = [], lras=None, lossgrads=[[calculus.Gauss_grad]], links=[calculus.Unity_link], linkgrads=[[calculus.Unity_link_grad]], pens=None, traints=None, prints="verbose", record=False, momentum=0.01):
+def train_models(inputDfs, targets, nrounds, lrs, startingModels, weightCol=None, staticFeats = [], lras=None, lossgrads=[[calculus.Gauss_grad]], links=[calculus.Unity_link], linkgrads=[[calculus.Unity_link_grad]], momentum=0.01, imposnLists=None, prints="verbose", record=False):
  
  history=[]
  
@@ -341,16 +340,6 @@ def train_models(inputDfs, targets, nrounds, lrs, startingModels, weightCol=None
           if totRele>0:
            model['contconts'][cols][i][1][j][1] -= finalGradients[i*(len(model['contconts'][cols][0][1])+1)+j]*lrs[m]*lra/totRele
   
-  #Penalize!
-  if pens!=None:
-   if prints=="verbose":
-    print("penalties")
-   for m in range(len(models)):
-    if models[m]['featcomb']=="addl":
-     models[m] = pena.penalize_model(models[m], pens[m]*lrs[m], 0)
-    else:
-     models[m] = pena.penalize_model(models[m], pens[m]*lrs[m], 1)
-  
   #Momentumize!
   
   if type(record)==type([]):
@@ -360,12 +349,12 @@ def train_models(inputDfs, targets, nrounds, lrs, startingModels, weightCol=None
       diff = misc.subtract_models(record[-1][m], record[-2][m])
       models[m] = misc.add_models(models[m], misc.mult_model(diff, momentum))
   
-  #Constrain!
+  #Impose!
   
-  if traints!=None:
-   for m in range(len(models)):
-    for constraintFunction in traints[m]:
-     models[m] = constraintFunction(models[m])
+  if imposnLists!=None:
+   for m in range(len(imposnLists)):
+    for imposition in imposnLists[m]:
+     models[m] = imposition(models[m])
   
   history.append(models)
  
@@ -373,7 +362,7 @@ def train_models(inputDfs, targets, nrounds, lrs, startingModels, weightCol=None
   return util.denump(models), util.denump(history)
  return util.denump(models)
 
-def train_model(inputDf, target, nrounds, lr, startingModel, weightCol=None, staticFeats = [], pen=0, specificPens={}, lossgrad=calculus.Poisson_grad, link=calculus.Unity_link, linkgrad=calculus.Unity_link_grad, traints=None, prints="verbose", record=False, momentum=0.01):
+def train_model(inputDf, target, nrounds, lr, startingModel, weightCol=None, staticFeats = [], lossgrad=calculus.Poisson_grad, link=calculus.Unity_link, linkgrad=calculus.Unity_link_grad, momentum=0.01, imposns=None, prints="verbose", record=False):
  
  history=[]
  
@@ -584,15 +573,6 @@ def train_model(inputDf, target, nrounds, lr, startingModel, weightCol=None, sta
       if totRele>0:
        model['contconts'][cols][i][1][j][1] -= finalGradients[i*(len(model['contconts'][cols][0][1])+1)+j]*lr/totRele
   
-  #Penalize!
-  if pen>0:
-   if prints=="verbose":
-    print("penalties")
-   if model['featcomb']=="addl":
-    model = pena.penalize_model(model, pen*lr, 0, specificPens)
-   else:
-    model = pena.penalize_model(model, pen*lr, 1, specificPens)
-  
   #Momentumize!
   
   if type(record)==type([]):
@@ -601,9 +581,11 @@ def train_model(inputDf, target, nrounds, lr, startingModel, weightCol=None, sta
      diff = misc.subtract_models(record[-1], record[-2])
      model = misc.add_models(model, misc.mult_model(diff, momentum))
   
-  if traints!=None:
-   for constraintFunction in traints:
-    model = constraintFunction(model)
+  #Impose!
+  
+  if imposns!=None:
+   for imposition in imposns:
+    model = imposition(model)
   
   history.append(model)
  

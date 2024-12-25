@@ -7,9 +7,8 @@ import misc
 import calculus
 import wraps
 import viz
+import impose
 import radify
-
-
 
 #Weighted Poisson proof of concept
 
@@ -19,7 +18,17 @@ cats = ["cat1", "cat2"]
 conts = ["cont1", "cont2"]
 
 model = wraps.prep_model(df, "y", cats, conts)
-model = wraps.train_poisson_model(df, 'y', 50, 0.2, model, weightCol="exposure")
+print(model)
+model = wraps.train_poisson_model(df, 'y', 50, 0.1, model, weightCol="exposure")
+print(model)
+
+#JPAB proof of concept (still for weighted Poisson)
+
+model = wraps.jpab_interact_poisson_model(df, 'y',50,0.1, model, weightCol="exposure", N=2)
+print(model)
+models = wraps.prep_models(df,"y",cats,conts,N=2)
+models = wraps.jpab_parallelize_poisson_models(df, 'y',50,0.1,models, weightCol="exposure")
+print(models)
 
 #Logistic Proof of Concept 
 
@@ -104,7 +113,7 @@ df = pd.DataFrame({"cont1":[1,2,3,4,1,2,3,4], "cont2":[1,2,3,4,5,4,3,4], "cat1":
 cats = ["cat1", "cat2"]
 conts = ["cont1", "cont2"]
 
-models = wraps.prep_gamma_models(df, 'y', cats, conts, 2)
+models = wraps.prep_models(df, 'y', cats, conts, 2)
 models = wraps.train_gamma_models(df, 'y', 50, [0.2,0.3], models)
 
 pred1 = misc.predict(df, models[0])
@@ -145,7 +154,7 @@ if False:
 	cats=[]
 	conts=["x"]
 
-	models = wraps.prep_gamma_models(udf, 'y', cats, conts, 1)
+	models = wraps.prep_models(udf, 'y', cats, conts, 1)
 	models = wraps.train_gamma_models(udf, 'y', 1000, [0.1], models)
 
 	print(models)
@@ -176,7 +185,7 @@ if False:
 	cats=[]
 	conts=["x"]
 
-	models = wraps.prep_gamma_models(udf, 'y', cats, conts, 1)
+	models = wraps.prep_models(udf, 'y', cats, conts, 1)
 	models = wraps.train_gamma_models(udf, 'y', 1000, [0.1], models)
 
 	print(models)
@@ -258,6 +267,24 @@ wraps.viz_gnormal_models(models, "Gnormalized Adjustment")
 
 #---
 
+#Continuous Complexity Penalization Proof of Concept
+
+df = pd.DataFrame({"cont":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], "y":[1,2,3,4,5,6.2,7,7.8,9,10.2,11,12.4,12.6,14,15.4,16,16.2,18.8,19,20]})
+#df = pd.DataFrame({"cont":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], "y":[1,2,3,4,5,4.01,2.99,2,3,4.1,5.1,6,4,2,0,1,2,3,2,1]})
+cats=[]
+conts=["cont"]
+
+#The intended workflow is as follows:
+model = wraps.prep_additive_model(df,'y',cats,conts, contTargetPts=20) #Prep a model with an excessive amount of pts per feat . . .
+model["BASE_VALUE"]=0 #(Included to make sensemaking easier)
+print(model)
+model = wraps.train_normal_model(df,'y',100, 0.2, model, imposns = [impose.get_penalize_conts_complexity(2*0.2)]) # . . . impose a high penalty on polyjointedness in conts . . .
+print(model)
+model = misc.simplify_conts(model, 0.5) # . . . remove any redundant points . . .
+print(model)
+model = wraps.train_normal_model(df,'y',100, 0.2, model) # . . . then retrain model sans penalties.
+print(model)
+
 #Penalization Proof of Concept
 
 df = pd.DataFrame({"cont1":[1,4,3,2,6,7,5,9,8], "cont2":[1,2,3,1,2,3,1,2,3], "cont3":[1,2,3,4,5,4,3,2,1]})
@@ -266,12 +293,12 @@ df["y"]= df["cont1"] + df["cont2"]*0.04 + df["cont3"]*0.01
 cats=[]
 conts=["cont1","cont2", "cont3"]
 
-model = wraps.prep_additive_model(df,'y',cats, conts)
 
 #The intended workflow is as follows:
-model = wraps.train_normal_model(df,'y', 50, 0.2, model, pen=0.8)# First, train with high penalization . . .
+model = wraps.prep_additive_model(df,'y',cats, conts) #Prep a model as per usual . . .
+model = wraps.train_normal_model(df,'y', 50, 0.2, model, imposns = [impose.get_penalize_nondefault(0.8*0.2,0)])# . . . train with high penalization (here 0.8, modulo the 0.2 lr) . . .
 model = misc.de_feat(model, 0) # . . . then, purge all features that LASSO pulled to the default . . . 
-model = wraps.train_normal_model(df,'y', 50, 0.2, model, pen=0) # . . . and re-train on remaining features with lower (or zero!) penalization.
+model = wraps.train_normal_model(df,'y', 50, 0.2, model) # . . . and re-train on remaining features with lower (or zero!) penalization.
 
 #(NOTE #1: for a multiplicative model the middle line would be "misc.de_feat(model, 1)", as the default value there is 1.)
 #(NOTE #2: de_feat doesn't affect interactions because if you're using penalization to remove interaction effects then you have made poor life choices.)

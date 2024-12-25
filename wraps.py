@@ -9,7 +9,7 @@ import prep
 import misc
 import calculus
 import viz
-import constraints
+import impose
 
 ALPHABET="ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -19,20 +19,20 @@ def prep_model(inputDf, resp, cats, conts, catMinPrev=0.01, contTargetPts=5, con
  return model
 
 
-def train_gamma_model(inputDf, resp, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal", momentum=0):
+def train_gamma_model(inputDf, resp, nrounds, lr, model, weightCol=None, staticFeats=[], momentum=0, imposns=[], prints="normal"):
  df = inputDf.reset_index(drop=True)
- model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, pen=pen, specificPens={}, lossgrad=calculus.Gamma_grad, prints=prints, momentum=momentum)
+ model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, lossgrad=calculus.Gamma_grad, imposns=imposns, momentum=momentum, prints=prints)
  return model
 
-def train_poisson_model(inputDf, resp, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal", momentum=0):
+def train_poisson_model(inputDf, resp, nrounds, lr, model, weightCol=None, staticFeats=[], momentum=0, imposns=[], prints="normal"):
  df = inputDf.reset_index(drop=True)
- model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, pen=pen, specificPens={}, lossgrad=calculus.Poisson_grad, prints=prints, momentum=momentum)
+ model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, lossgrad=calculus.Poisson_grad, imposns=imposns, momentum=momentum, prints=prints)
  return model
 
-def train_tweedie_model(inputDf, resp, nrounds, lr, model, pTweedie=1.5, pen=0, weightCol=None, staticFeats=[], prints="normal", momentum=0):
+def train_tweedie_model(inputDf, resp, nrounds, lr, model, pTweedie=1.5, weightCol=None, staticFeats=[], momentum=0, imposns=[], prints="normal"):
  df = inputDf.reset_index(drop=True)
  Tweedie_grad = calculus.produce_Tweedie_grad(pTweedie) 
- model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, pen=pen, specificPens={}, lossgrad=Tweedie_grad, prints=prints, momentum=momentum)
+ model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, lossgrad=Tweedie_grad, imposns=imposns, momentum=momentum, prints=prints)
  return model
 
 
@@ -53,7 +53,7 @@ def interxhunt_gamma_model(inputDf, resp, cats, conts, model, silent=False, weig
   for j in range(i+1, len(cats)):
    trialmodel = {"BASE_VALUE":1, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}}
    prep.add_catcat_to_model(trialmodel, df, cats[i], cats[j], defaultValue=1)
-   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=calculus.Gamma_grad, pen=0, prints="silent")
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=calculus.Gamma_grad, prints="silent")
    
    if not silent:
     print(cats[i]+" X "+cats[j], misc.get_importance_of_this_catcat(df, trialmodel, cats[i]+" X "+cats[j], defaultValue=1))
@@ -66,7 +66,7 @@ def interxhunt_gamma_model(inputDf, resp, cats, conts, model, silent=False, weig
   for j in range(len(conts)):
    trialmodel = {"BASE_VALUE":1, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}}
    prep.add_catcont_to_model(trialmodel, df, cats[i], conts[j], defaultValue=1)
-   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=calculus.Gamma_grad, pen=0, prints="silent")
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=calculus.Gamma_grad, prints="silent")
    
    if not silent:
     print(cats[i]+" X "+conts[j],misc.get_importance_of_this_catcont(df, trialmodel, cats[i]+" X "+conts[j], defaultValue=1))
@@ -79,7 +79,7 @@ def interxhunt_gamma_model(inputDf, resp, cats, conts, model, silent=False, weig
   for j in range(i+1, len(conts)):
    trialmodel = {"BASE_VALUE":1, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}}
    prep.add_contcont_to_model(trialmodel, df, conts[i], conts[j], defaultValue=1)
-   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=calculus.Gamma_grad, pen=0, prints="silent")
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=calculus.Gamma_grad, prints="silent")
    
    if not silent:
     print(conts[i]+" X "+conts[j], misc.get_importance_of_this_contcont(df, trialmodel, conts[i]+" X "+conts[j], defaultValue=1))
@@ -93,7 +93,7 @@ def interxhunt_gamma_model(inputDf, resp, cats, conts, model, silent=False, weig
  sugDf.to_csv(filename+".csv")
 
 
-def interxhunt_poisson_model(inputDf, resp, cats, conts, model, silent=False, weightCol=None, filename="suggestions"):
+def interxhunt_poisson_model(inputDf, resp, cats, conts, model, silent=False, weightCol=None, filename="suggestions", save=True):
  
  df = inputDf.reset_index(drop=True)
  
@@ -107,7 +107,7 @@ def interxhunt_poisson_model(inputDf, resp, cats, conts, model, silent=False, we
   for j in range(i+1, len(cats)):
    trialmodel = {"BASE_VALUE":1, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}}
    prep.add_catcat_to_model(trialmodel, df, cats[i], cats[j], defaultValue=1)
-   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=calculus.Poisson_grad, pen=0, prints="silent")
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=calculus.Poisson_grad, prints="silent")
    
    if not silent:
     print(cats[i]+" X "+cats[j], misc.get_importance_of_this_catcat(df, trialmodel, cats[i]+" X "+cats[j], defaultValue=1))
@@ -120,7 +120,7 @@ def interxhunt_poisson_model(inputDf, resp, cats, conts, model, silent=False, we
   for j in range(len(conts)):
    trialmodel = {"BASE_VALUE":1, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}}
    prep.add_catcont_to_model(trialmodel, df, cats[i], conts[j], defaultValue=1)
-   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=calculus.Poisson_grad, pen=0, prints="silent")
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=calculus.Poisson_grad, prints="silent")
    
    if not silent:
     print(cats[i]+" X "+conts[j],misc.get_importance_of_this_catcont(df, trialmodel, cats[i]+" X "+conts[j], defaultValue=1))
@@ -133,7 +133,7 @@ def interxhunt_poisson_model(inputDf, resp, cats, conts, model, silent=False, we
   for j in range(i+1, len(conts)):
    trialmodel = {"BASE_VALUE":1, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}}
    prep.add_contcont_to_model(trialmodel, df, conts[i], conts[j], defaultValue=1)
-   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=calculus.Poisson_grad, pen=0, prints="silent")
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=calculus.Poisson_grad, prints="silent")
    
    if not silent:
     print(conts[i]+" X "+conts[j], misc.get_importance_of_this_contcont(df, trialmodel, conts[i]+" X "+conts[j], defaultValue=1))
@@ -144,7 +144,10 @@ def interxhunt_poisson_model(inputDf, resp, cats, conts, model, silent=False, we
  
  sugDf = pd.DataFrame({"Interaction":sugFeats, "Type":sugTypes, "Importance":sugImps})
  sugDf = sugDf.sort_values(['Importance'], ascending=False).reset_index()
- sugDf.to_csv(filename+".csv")
+ if save:
+  sugDf.to_csv(filename+".csv")
+ else:
+  return sugDf
 
 
 
@@ -165,7 +168,7 @@ def interxhunt_tweedie_model(inputDf, resp, cats, conts, model, pTweedie=1.5, si
   for j in range(i+1, len(cats)):
    trialmodel = {"BASE_VALUE":1, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}}
    prep.add_catcat_to_model(trialmodel, df, cats[i], cats[j], defaultValue=1)
-   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=Tweedie_grad, pen=0, prints="silent")
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=Tweedie_grad, prints="silent")
    
    if not silent:
     print(cats[i]+" X "+cats[j], misc.get_importance_of_this_catcat(df, trialmodel, cats[i]+" X "+cats[j], defaultValue=1))
@@ -178,7 +181,7 @@ def interxhunt_tweedie_model(inputDf, resp, cats, conts, model, pTweedie=1.5, si
   for j in range(len(conts)):
    trialmodel = {"BASE_VALUE":1, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}}
    prep.add_catcont_to_model(trialmodel, df, cats[i], conts[j], defaultValue=1)
-   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=Tweedie_grad, pen=0, prints="silent")
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=Tweedie_grad, prints="silent")
    
    if not silent:
     print(cats[i]+" X "+conts[j],misc.get_importance_of_this_catcont(df, trialmodel, cats[i]+" X "+conts[j], defaultValue=1))
@@ -191,7 +194,7 @@ def interxhunt_tweedie_model(inputDf, resp, cats, conts, model, pTweedie=1.5, si
   for j in range(i+1, len(conts)):
    trialmodel = {"BASE_VALUE":1, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}}
    prep.add_contcont_to_model(trialmodel, df, conts[i], conts[j], defaultValue=1)
-   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=Tweedie_grad, pen=0, prints="silent")
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=Tweedie_grad, prints="silent")
    
    if not silent:
     print(conts[i]+" X "+conts[j], misc.get_importance_of_this_contcont(df, trialmodel, conts[i]+" X "+conts[j], defaultValue=1))
@@ -205,9 +208,35 @@ def interxhunt_tweedie_model(inputDf, resp, cats, conts, model, pTweedie=1.5, si
  sugDf.to_csv(filename+".csv")
 
 
+def jpab_interact_poisson_model(inputDf, resp, nrounds, lr, model, weightCol=None, staticFeats=[], momentum=0, imposns=[], prints="normal", N=4, n=1, replace=True):
+ model = train_poisson_model(inputDf, resp, nrounds, lr, model, weightCol=weightCol, staticFeats=staticFeats, momentum=momentum, imposns=imposns, prints=prints)
+ for I in range(N):
+  sDf = interxhunt_poisson_model(inputDf, resp, cats=[c for c in model["cats"]], conts=[c for c in model["conts"]], model=model, silent=False, weightCol=None, filename="suggestions", save=False)
+  for i in range(n):
+   Type = sDf.loc[i,"Type"]
+   feat1, feat2 = sDf.loc[i,"Interaction"].split(" X ")
+   if Type=="catcat":
+    if feat1 in model["cats"] and feat2 in model["cats"]:
+     model = prep.add_catcat_to_model(model, inputDf, feat1, feat2, replace=replace)
+   if Type=="catcont":
+    if feat1 in model["cats"] and feat2 in model["conts"]:
+     model = prep.add_catcont_to_model(model, inputDf, feat1, feat2, replace=replace)
+   if Type=="contcont":
+    if feat1 in model["conts"] and feat2 in model["conts"]:
+     model = prep.add_contcont_to_model(model, inputDf, feat1, feat2, replace=replace)
+  model = train_poisson_model(inputDf, resp, nrounds, lr, model, weightCol=weightCol, staticFeats=staticFeats, momentum=momentum, imposns=imposns, prints=prints)
+ return model
 
+def jpab_parallelize_poisson_models(inputDf, resp, nrounds, lr, models, weightCol=None, staticFeats=[], momentum=0, imposnLists=[[]], prints="normal"):
+ df = inputDf.reset_index(drop=True)
+ for i in range(len(models)):
+  lrs = [lr]*(i+1) + [0]*(len(models)-(i+1))
+  models = actual_modelling.train_models([df], resp, nrounds, lrs, models, weightCol, staticFeats, lras=calculus.addsmoothing_LRAs, lossgrads=[[calculus.Poisson_grad]], links=[calculus.Add_mlink], linkgrads=[[calculus.Add_mlink_grad]*len(models)], imposnLists=imposnLists, momentum=momentum, prints=prints)
+ return models
+ 
+   
 
-def prep_gamma_models(inputDf, resp, cats, conts, N=1, fractions=None, catMinPrev=0.01, contTargetPts=5, contEdge=0.01, weightCol=None):
+def prep_models(inputDf, resp, cats, conts, N=1, fractions=None, catMinPrev=0.01, contTargetPts=5, contEdge=0.01, weightCol=None):
  df = inputDf.reset_index(drop=True)
  if fractions==None:
   denom = N*(N+1)/2
@@ -219,9 +248,9 @@ def prep_gamma_models(inputDf, resp, cats, conts, N=1, fractions=None, catMinPre
   models.append(model)
  return models
 
-def train_gamma_models(inputDf, resp, nrounds, lrs, models, pens=None, weightCol=None, staticFeats=[], prints="normal", momentum=0):
+def train_gamma_models(inputDf, resp, nrounds, lrs, models, weightCol=None, staticFeats=[], imposnLists=[[]], momentum=0, prints="normal"):
  df = inputDf.reset_index(drop=True)
- models = actual_modelling.train_models([df], resp, nrounds, lrs, models, weightCol, staticFeats, lras=calculus.addsmoothing_LRAs, lossgrads=[[calculus.Gamma_grad]], links=[calculus.Add_mlink], linkgrads=[[calculus.Add_mlink_grad]*len(models)], pens=pens, prints=prints, momentum=momentum)
+ models = actual_modelling.train_models([df], resp, nrounds, lrs, models, weightCol, staticFeats, lras=calculus.addsmoothing_LRAs, lossgrads=[[calculus.Gamma_grad]], links=[calculus.Add_mlink], linkgrads=[[calculus.Add_mlink_grad]*len(models)], imposnLists=imposnLists, momentum=momentum, prints=prints)
  return models
 
 def interxhunt_gamma_models(inputDf, resp, cats, conts, models, silent=False, weightCol=None, filename="suggestions"):
@@ -298,23 +327,23 @@ def gnormalize_gamma_models(models, inputDf, resp, cats, conts, startingErrorPer
  models.append(errModel)
  return models
 
-def train_gnormal_models(inputDfs, resp, nrounds, lrs, models, pens=None, weightCol=None, staticFeats=[], prints="normal", momentum=0):
+def train_gnormal_models(inputDfs, resp, nrounds, lrs, models, weightCol=None, staticFeats=[], prints="normal", momentum=0, imposnLists=[[]]):
  if type(inputDfs)!=list:
   dfs=[inputDfs.reset_index(drop=True)]
  else:
   dfs = [inputDf.reset_index(drop=True) for inputDf in inputDfs]
  
- models = actual_modelling.train_models(dfs, resp, nrounds, lrs, models, weightCol, staticFeats, lras = calculus.addsmoothing_LRAs_erry[:len(models)-1] + [calculus.default_LRA], lossgrads = [[calculus.gnormal_u_diff, calculus.gnormal_p_diff],[calculus.gnormal_u_diff_censored, calculus.gnormal_p_diff_censored]], links=[calculus.Add_mlink_allbutlast, calculus.Add_mlink_onlylast], linkgrads=[[calculus.Add_mlink_grad]*(len(models)-1)+[calculus.Add_mlink_grad_void], [calculus.Add_mlink_grad_void]*(len(models)-1)+[calculus.Add_mlink_grad]], pens=pens, prints=prints)
+ models = actual_modelling.train_models(dfs, resp, nrounds, lrs, models, weightCol, staticFeats, lras = calculus.addsmoothing_LRAs_erry[:len(models)-1] + [calculus.default_LRA], lossgrads = [[calculus.gnormal_u_diff, calculus.gnormal_p_diff],[calculus.gnormal_u_diff_censored, calculus.gnormal_p_diff_censored]], links=[calculus.Add_mlink_allbutlast, calculus.Add_mlink_onlylast], linkgrads=[[calculus.Add_mlink_grad]*(len(models)-1)+[calculus.Add_mlink_grad_void], [calculus.Add_mlink_grad_void]*(len(models)-1)+[calculus.Add_mlink_grad]], momentum=momentum, imposnLists=imposnLists, prints=prints)
  
  return models
 
-def train_doublecensored_gnormal_models(inputDfs, resps, nrounds, lrs, models, pens=None, weightCol=None, staticFeats=[], prints="normal", momentum=0):
+def train_doublecensored_gnormal_models(inputDfs, resps, nrounds, lrs, models, weightCol=None, staticFeats=[], prints="normal", momentum=0, imposnLists=[[]]):
  if type(inputDfs)!=list:
   dfs=[inputDfs.reset_index(drop=True)]
  else:
   dfs = [inputDf.reset_index(drop=True) for inputDf in inputDfs]
  
- models = actual_modelling.train_models(dfs, resps, nrounds, lrs, models, weightCol, staticFeats, lras = calculus.addsmoothing_LRAs_erry[:len(models)-1] + [calculus.default_LRA], lossgrads = [[calculus.gnormal_u_diff_doubleuncensored, calculus.gnormal_p_diff_doubleuncensored],[calculus.gnormal_u_diff_doublecensored, calculus.gnormal_p_diff_doublecensored]], links=[calculus.Add_mlink_allbutlast, calculus.Add_mlink_onlylast], linkgrads=[[calculus.Add_mlink_grad]*(len(models)-1)+[calculus.Add_mlink_grad_void], [calculus.Add_mlink_grad_void]*(len(models)-1)+[calculus.Add_mlink_grad]], pens=pens, prints=prints)
+ models = actual_modelling.train_models(dfs, resps, nrounds, lrs, models, weightCol, staticFeats, lras = calculus.addsmoothing_LRAs_erry[:len(models)-1] + [calculus.default_LRA], lossgrads = [[calculus.gnormal_u_diff_doubleuncensored, calculus.gnormal_p_diff_doubleuncensored],[calculus.gnormal_u_diff_doublecensored, calculus.gnormal_p_diff_doublecensored]], links=[calculus.Add_mlink_allbutlast, calculus.Add_mlink_onlylast], linkgrads=[[calculus.Add_mlink_grad]*(len(models)-1)+[calculus.Add_mlink_grad_void], [calculus.Add_mlink_grad_void]*(len(models)-1)+[calculus.Add_mlink_grad]], momentum=momentum, imposnLists=imposnLists, prints=prints)
  
  return models
 
@@ -487,9 +516,9 @@ def prep_additive_model(inputDf, resp, cats, conts, catMinPrev=0.01, contTargetP
  model["featcomb"] = "addl"
  return model
 
-def train_normal_model(inputDf, resp, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal", momentum=0):
+def train_normal_model(inputDf, resp, nrounds, lr, model, weightCol=None, staticFeats=[], momentum=0, imposns=[], prints="normal"):
  df = inputDf.reset_index(drop=True)
- model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, pen=pen, specificPens={}, lossgrad=calculus.Gauss_grad, prints=prints, momentum=momentum)
+ model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, lossgrad=calculus.Gauss_grad, momentum=momentum, imposns=imposns, prints=prints)
  return model
 
 def interxhunt_normal_model(inputDf, resp, cats, conts, model, silent=False, weightCol=None, filename="suggestions"):
@@ -506,7 +535,7 @@ def interxhunt_normal_model(inputDf, resp, cats, conts, model, silent=False, wei
   for j in range(i+1, len(cats)):
    trialmodel = {"BASE_VALUE":0, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}, "featcomb":"addl"}
    prep.add_catcat_to_model(trialmodel, df, cats[i], cats[j], defaultValue=0)
-   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=calculus.Gauss_grad, pen=0, prints="silent")
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=calculus.Gauss_grad, prints="silent")
    
    if not silent:
     print(cats[i]+" X "+cats[j], misc.get_importance_of_this_catcat(df, trialmodel, cats[i]+" X "+cats[j], defaultValue=0))
@@ -519,7 +548,7 @@ def interxhunt_normal_model(inputDf, resp, cats, conts, model, silent=False, wei
   for j in range(len(conts)):
    trialmodel = {"BASE_VALUE":0, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}, "featcomb":"addl"}
    prep.add_catcont_to_model(trialmodel, df, cats[i], conts[j], defaultValue=0)
-   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=calculus.Gauss_grad, pen=0, prints="silent")
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=calculus.Gauss_grad, prints="silent")
    
    if not silent:
     print(cats[i]+" X "+conts[j],misc.get_importance_of_this_catcont(df, trialmodel, cats[i]+" X "+conts[j], defaultValue=0))
@@ -532,7 +561,7 @@ def interxhunt_normal_model(inputDf, resp, cats, conts, model, silent=False, wei
   for j in range(i+1, len(conts)):
    trialmodel = {"BASE_VALUE":0, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}, "featcomb":"addl"}
    prep.add_contcont_to_model(trialmodel, df, conts[i], conts[j], defaultValue=0)
-   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=calculus.Gauss_grad, pen=0, prints="silent")
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad=calculus.Gauss_grad, prints="silent")
    
    if not silent:
     print(conts[i]+" X "+conts[j], misc.get_importance_of_this_contcont(df, trialmodel, conts[i]+" X "+conts[j], defaultValue=0))
@@ -555,11 +584,11 @@ def prep_classifier_model(inputDf, resp, cats, conts, catMinPrev=0.01, contTarge
  model["featcomb"] = "addl"
  return model
 
-def train_classifier_model(inputDf, resp, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal", momentum=0):
+def train_classifier_model(inputDf, resp, nrounds, lr, model, weightCol=None, staticFeats=[], prints="normal", momentum=0, imposns=[]):
  
  df = inputDf.reset_index(drop=True)
  
- model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, pen=pen, specificPens={}, lossgrad=calculus.Logistic_grad, link = calculus.Logit_link, linkgrad = calculus.Logit_link_grad, prints=prints, momentum=momentum)
+ model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, lossgrad=calculus.Logistic_grad, link = calculus.Logit_link, linkgrad = calculus.Logit_link_grad, momentum=momentum, imposns=imposns, prints=prints)
  return model
 
 def interxhunt_classifier_model(inputDf, resp, cats, conts, model, silent=False, weightCol=None, filename="suggestions"):
@@ -576,7 +605,7 @@ def interxhunt_classifier_model(inputDf, resp, cats, conts, model, silent=False,
   for j in range(i+1, len(cats)):
    trialmodel = {"BASE_VALUE":0, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}, "featcomb":"addl"}
    prep.add_catcat_to_model(trialmodel, df, cats[i], cats[j], defaultValue=0)
-   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], link = calculus.Logit_link,  linkgrad = calculus.Logit_link_grad, lossgrad = calculus.Logistic_grad, pen=0, prints="silent")
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], link = calculus.Logit_link,  linkgrad = calculus.Logit_link_grad, lossgrad = calculus.Logistic_grad, prints="silent")
    
    if not silent:
     print(cats[i]+" X "+cats[j], misc.get_importance_of_this_catcat(df, trialmodel, cats[i]+" X "+cats[j], defaultValue=0))
@@ -589,7 +618,7 @@ def interxhunt_classifier_model(inputDf, resp, cats, conts, model, silent=False,
   for j in range(len(conts)):
    trialmodel = {"BASE_VALUE":0, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}, "featcomb":"addl"}
    prep.add_catcont_to_model(trialmodel, df, cats[i], conts[j], defaultValue=0)
-   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], link = calculus.Logit_link, linkgrad = calculus.Logit_link_grad, lossgrad = calculus.Logistic_grad, pen=0, prints="silent")
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], link = calculus.Logit_link, linkgrad = calculus.Logit_link_grad, lossgrad = calculus.Logistic_grad, prints="silent")
    
    if not silent:
     print(cats[i]+" X "+conts[j],misc.get_importance_of_this_catcont(df, trialmodel, cats[i]+" X "+conts[j], defaultValue=0))
@@ -602,7 +631,7 @@ def interxhunt_classifier_model(inputDf, resp, cats, conts, model, silent=False,
   for j in range(i+1, len(conts)):
    trialmodel = {"BASE_VALUE":0, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}, "featcomb":"addl"}
    prep.add_contcont_to_model(trialmodel, df, conts[i], conts[j], defaultValue=0)
-   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], link = calculus.Logit_link, linkgrad = calculus.Logit_link_grad, lossgrad = calculus.Logistic_grad, pen=0, prints="silent")
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], link = calculus.Logit_link, linkgrad = calculus.Logit_link_grad, lossgrad = calculus.Logistic_grad, prints="silent")
    
    if not silent:
     print(conts[i]+" X "+conts[j], misc.get_importance_of_this_contcont(df, trialmodel, conts[i]+" X "+conts[j], defaultValue=0))
@@ -630,11 +659,11 @@ def prep_adjustment_model(inputDf, resp, startingPoint, cats, conts, catMinPrev=
  model["conts"][startingPoint] = [[min(df[startingPoint]), min(df[startingPoint])], [max(df[startingPoint]), max(df[startingPoint])]]
  return model
 
-def train_adjustment_model(inputDf, resp, startingPoint, nrounds, lr, model, pen=0, weightCol=None, staticFeats=[], prints="normal", momentum=0):
+def train_adjustment_model(inputDf, resp, startingPoint, nrounds, lr, model, weightCol=None, staticFeats=[], momentum=0, imposns=[], prints="normal"):
  
  df = inputDf.reset_index(drop=True)
  
- model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats=[startingPoint]+staticFeats, pen=pen, specificPens={}, lossgrad=calculus.Gamma_grad, prints=prints, momentum=momentum)
+ model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats=[startingPoint]+staticFeats, lossgrad=calculus.Gamma_grad,  momentum=momentum, imposns=imposns, prints=prints)
  return model
 
 def interxhunt_adjustment_model(inputDf, resp, cats, conts, model, silent=False, weightCol=None, filename="suggestions"):
@@ -651,7 +680,7 @@ def interxhunt_adjustment_model(inputDf, resp, cats, conts, model, silent=False,
   for j in range(i+1, len(cats)):
    trialmodel = {"BASE_VALUE":1, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}, "featcomb":"mult"}
    prep.add_catcat_to_model(trialmodel, df, cats[i], cats[j], defaultValue=1)
-   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad = calculus.Gamma_grad, pen=0, prints="silent")
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad = calculus.Gamma_grad, prints="silent")
    
    if not silent:
     print(cats[i]+" X "+cats[j], misc.get_importance_of_this_catcat(df, trialmodel, cats[i]+" X "+cats[j], defaultValue=0))
@@ -664,7 +693,7 @@ def interxhunt_adjustment_model(inputDf, resp, cats, conts, model, silent=False,
   for j in range(len(conts)):
    trialmodel = {"BASE_VALUE":1, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}, "featcomb":"mult"}
    prep.add_catcont_to_model(trialmodel, df, cats[i], conts[j], defaultValue=1)
-   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad = calculus.Gamma_grad, pen=0, prints="silent")
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad = calculus.Gamma_grad, prints="silent")
    
    if not silent:
     print(cats[i]+" X "+conts[j],misc.get_importance_of_this_catcont(df, trialmodel, cats[i]+" X "+conts[j], defaultValue=0))
@@ -677,7 +706,7 @@ def interxhunt_adjustment_model(inputDf, resp, cats, conts, model, silent=False,
   for j in range(i+1, len(conts)):
    trialmodel = {"BASE_VALUE":1, "conts":{"PredComb":[[min(df["PredComb"]),min(df["PredComb"])],[max(df["PredComb"]),max(df["PredComb"])]]}, "featcomb":"mult"}
    prep.add_contcont_to_model(trialmodel, df, conts[i], conts[j], defaultValue=1)
-   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad = calculus.Gamma_grad, pen=0, prints="silent")
+   trialmodel = actual_modelling.train_model(df, resp, 1, 0.2, trialmodel, staticFeats=["PredComb"], lossgrad = calculus.Gamma_grad, prints="silent")
    
    if not silent:
     print(conts[i]+" X "+conts[j], misc.get_importance_of_this_contcont(df, trialmodel, conts[i]+" X "+conts[j], defaultValue=0))
@@ -707,9 +736,12 @@ def prep_cratio_models(inputDf, resp, cats, conts, N=1, fractions=None, catMinPr
   models.append(model)
  return models
 
-def train_cratio_models(inputDf, resp, nrounds, lrs, models, pens=None, weightCol=None, staticFeats=[], prints="normal", momentum=0, minrela=0.01):
+def train_cratio_models(inputDf, resp, nrounds, lrs, models, pens=None, weightCol=None, staticFeats=[], minrela=0.01, momentum=0, imposnLists=None, prints="normal"):
  df = inputDf.reset_index(drop=True)
- models = actual_modelling.train_models([df], resp, nrounds, lrs, models, weightCol, staticFeats, lras=calculus.addsmoothing_LRAs, lossgrads=[[calculus.Logistic_grad]], links=[calculus.Cratio_mlink], linkgrads=[[calculus.Cratio_mlink_grad]*len(models)], pens=pens, prints=prints, momentum=momentum, traints=[[constraints.get_enforce_min_rela(minrela)]])
+ if imposnLists==None:
+  models = actual_modelling.train_models([df], resp, nrounds, lrs, models, weightCol, staticFeats, lras=calculus.addsmoothing_LRAs, lossgrads=[[calculus.Logistic_grad]], links=[calculus.Cratio_mlink], linkgrads=[[calculus.Cratio_mlink_grad]*len(models)], momentum=momentum, imposnLists=[[impose.get_enforce_min_rela(minrela)]]*len(models), prints=prints)
+ else:
+  models = actual_modelling.train_models([df], resp, nrounds, lrs, models, weightCol, staticFeats, lras=calculus.addsmoothing_LRAs, lossgrads=[[calculus.Logistic_grad]], links=[calculus.Cratio_mlink], linkgrads=[[calculus.Cratio_mlink_grad]*len(models)], momentum=momentum, imposnLists=imposnLists, prints=prints)
  return models
 
 def interxhunt_cratio_models(inputDf, resp, cats, conts, models, silent=False, weightCol=None, filename="suggestions"):
