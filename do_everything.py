@@ -9,6 +9,7 @@ import wraps
 import viz
 import impose
 import radify
+import dodel
 
 #Weighted Poisson proof of concept
 
@@ -24,10 +25,14 @@ print(model)
 
 #JPAB proof of concept (still for weighted Poisson)
 
-model = wraps.jpab_interact_poisson_model(df, 'y',50,0.1, model, weightCol="exposure", N=2)
+model = wraps.prep_model(df, "y", cats, conts)
 print(model)
+model = wraps.jpab_interacted_poisson_model(df, 'y',50,0.1, model, weightCol="exposure", N=2, prints="verbose")
+print(model)
+
 models = wraps.prep_models(df,"y",cats,conts,N=2)
-models = wraps.jpab_parallelize_poisson_models(df, 'y',50,0.1,models, weightCol="exposure")
+print(models)
+models = wraps.jpab_parallelized_poisson_models(df, 'y',50,0.1,models, weightCol="exposure")
 print(models)
 
 #Logistic Proof of Concept 
@@ -144,7 +149,7 @@ wraps.interxhunt_gnormal_models(df,'y',cats,conts,models, filename="suggestions_
 
 wraps.viz_gnormal_models(models, "Gnormal")
 
-#Tobit proof of concept (removed for taking too long!)
+#Tobit proof of concept (removed for taking too long and requiring gen)
 
 if False:
 	df = pd.read_csv('gnormal.csv')
@@ -206,6 +211,26 @@ if False:
 	print(models)
 
 	wraps.viz_gnormal_models(models, "Tobit2")
+
+#SuVec proof of concept (removed for requiring gen)
+
+if False:
+ df = pd.read_csv('suvec.csv')
+ ldf = df[df['over']].reset_index()
+ udf = df[~df['over']].reset_index()
+ 
+ cats=[]
+ conts=["x"]
+ 
+ models = wraps.prep_models(df, 'censor_y', cats, conts, 1)
+ models[0]["BASE_VALUE"]=100
+ models = wraps.train_gamma_models(df, 'censor_y', 100, [0.1], models)
+ 
+ print(models)
+ 
+ models = wraps.train_gamma_suvec_models(ldf, udf, "censor_y", 100, [0.5], models)
+ 
+ print(models)
 
 #Additive Proof of Concept
 

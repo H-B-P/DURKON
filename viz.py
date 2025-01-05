@@ -441,6 +441,7 @@ def draw_AvE(df, col, predCol, actCol, cat=None, catMinPrev=0.01, weightCol=None
  
  plotly.offline.plot(fig, filename=folder+"/AvE_for_"+col+'.html', auto_open = False)
 
+
 if __name__=="__main__":
  df = pd.read_csv("train.csv")
  df["pred"] = df["Width"]*df["Height"]

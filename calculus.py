@@ -229,6 +229,20 @@ def gnormal_u_diff_doubleuncensored(u,p,y,c1,c2):
 def gnormal_p_diff_doubleuncensored(u,p,y,c1,c2):
  return gnormal_p_diff(u,p,y)
 
+#Suvec
+
+def suvec_normal_upper(pred,act):
+ return (pred-act)*(pred>act)
+
+def suvec_normal_lower(pred,act):
+ return (pred-act)*(pred<act)
+
+def suvec_gamma_upper(pred,act):
+ return ((pred-act)/(pred*pred))*(pred>act)
+
+def suvec_gamma_lower(pred,act):
+ return ((pred-act)/(pred*pred))*(pred<act)
+
 #Techne
 
 def get_effect_of_this_cont_col(ser, cont):

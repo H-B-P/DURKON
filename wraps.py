@@ -208,8 +208,23 @@ def interxhunt_tweedie_model(inputDf, resp, cats, conts, model, pTweedie=1.5, si
  sugDf.to_csv(filename+".csv")
 
 
-def jpab_interact_poisson_model(inputDf, resp, nrounds, lr, model, weightCol=None, staticFeats=[], momentum=0, imposns=[], prints="normal", N=4, n=1, replace=True):
- model = train_poisson_model(inputDf, resp, nrounds, lr, model, weightCol=weightCol, staticFeats=staticFeats, momentum=momentum, imposns=imposns, prints=prints)
+def jpab_pared_poisson_model(inputDf, resp, nrounds, lr, model, weightCol=None, staticFeats=[], momentum=0, imposns=[], prints="normal", pen=0.1, pencc=0, pe=0.02):
+ if pencc>0:
+  print("PC!")
+  model = train_poisson_model(inputDf, resp, nrounds, lr, model, weightCol=weightCol, staticFeats=staticFeats, momentum=momentum, imposns = imposns+[impose.get_penalize_conts_complexity(lr*pencc)], prints=prints)
+  model = misc.simplify_conts(model, pe)
+ if pen>0:
+  print("P!")
+  model = train_poisson_model(inputDf, resp, nrounds, lr, model, weightCol=weightCol, staticFeats=staticFeats, momentum=momentum, imposns = imposns+[impose.get_penalize_nondefault(lr*pen)], prints=prints)
+  model = misc.de_feat(model,1)
+ 
+ model = train_poisson_model(inputDf, resp, nrounds, lr, model, weightCol=weightCol, staticFeats=staticFeats, momentum=momentum, imposns = imposns, prints=prints)
+ return model
+
+def jpab_interacted_poisson_model(inputDf, resp, nrounds, lr, model, weightCol=None, staticFeats=[], momentum=0, imposns=[], prints="normal", N=4, n=1, replace=False, pen=0, pencc=0, pe=0.02):
+ 
+ model = jpab_pared_poisson_model(inputDf, resp, nrounds, lr, model, weightCol=weightCol, staticFeats=staticFeats, momentum=momentum, imposns=imposns, prints=prints, pen=pen, pencc=pencc, pe=pe)
+ 
  for I in range(N):
   sDf = interxhunt_poisson_model(inputDf, resp, cats=[c for c in model["cats"]], conts=[c for c in model["conts"]], model=model, silent=False, weightCol=None, filename="suggestions", save=False)
   for i in range(n):
@@ -224,10 +239,14 @@ def jpab_interact_poisson_model(inputDf, resp, nrounds, lr, model, weightCol=Non
    if Type=="contcont":
     if feat1 in model["conts"] and feat2 in model["conts"]:
      model = prep.add_contcont_to_model(model, inputDf, feat1, feat2, replace=replace)
-  model = train_poisson_model(inputDf, resp, nrounds, lr, model, weightCol=weightCol, staticFeats=staticFeats, momentum=momentum, imposns=imposns, prints=prints)
+  if replace:
+   model = train_poisson_model(inputDf, resp, nrounds, lr, model, weightCol=weightCol, staticFeats=staticFeats+cats+conts, momentum=momentum, imposns=imposns, prints=prints)
+  else:
+   model = train_poisson_model(inputDf, resp, nrounds, lr, model, weightCol=weightCol, staticFeats=staticFeats, momentum=momentum, imposns=imposns, prints=prints)
+ 
  return model
 
-def jpab_parallelize_poisson_models(inputDf, resp, nrounds, lr, models, weightCol=None, staticFeats=[], momentum=0, imposnLists=[[]], prints="normal"):
+def jpab_parallelized_poisson_models(inputDf, resp, nrounds, lr, models, weightCol=None, staticFeats=[], momentum=0, imposnLists=[[]], prints="normal"):
  df = inputDf.reset_index(drop=True)
  for i in range(len(models)):
   lrs = [lr]*(i+1) + [0]*(len(models)-(i+1))
@@ -719,6 +738,12 @@ def interxhunt_adjustment_model(inputDf, resp, cats, conts, model, silent=False,
  sugDf = sugDf.sort_values(['Importance'], ascending=False).reset_index()
  sugDf.to_csv(filename+".csv")
 
+
+
+
+def train_gamma_suvec_models(lowerDf, upperDf, resp, nrounds, lrs, models, weightCol=None, staticFeats=[], imposnLists=[[]], momentum=0, prints="normal"):
+ models = actual_modelling.train_models([lowerDf, upperDf], resp, nrounds, lrs, models, weightCol, staticFeats, lras=calculus.addsmoothing_LRAs, lossgrads=[[calculus.suvec_gamma_lower],[calculus.suvec_gamma_upper]], links=[calculus.Add_mlink], linkgrads=[[calculus.Add_mlink_grad]*len(models)], imposnLists=imposnLists, momentum=momentum, prints=prints)
+ return models
 
 
 

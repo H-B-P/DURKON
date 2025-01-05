@@ -88,7 +88,7 @@ def de_feat(model, defaultValue=1): #Not expanded to interxes
  
  return newModel
 
-def simplify_cont(cont, pe):
+def simplify_cont(cont, pe=0.02):
  scont = copy.deepcopy(cont)
  
  spsn=0
@@ -112,7 +112,7 @@ def simplify_cont(cont, pe):
   spsn+=1
  return scont
 
-def simplify_conts(model, pe): #This technically belongs in misc but realistically the only time you'd use it is on something trained with penalize_conts_complexity
+def simplify_conts(model, pe=0.02): #This technically belongs in misc but realistically the only time you'd use it is on something trained with penalize_conts_complexity
  for c in model["conts"]:
   model["conts"][c] = simplify_cont(model["conts"][c], pe)
  return model

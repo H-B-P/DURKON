@@ -191,31 +191,37 @@ def add_catcat_to_model(model, df, cat1, cat2, catMinPrev1=0.1, catMinPrev2=0.1,
 
 #Bandings . . .
 
-def get_banded_cont_feat(df, cont, contTargetPts=9, contEdge=0.1, defaultValue=1, weightCol=None):
- if weightCol==None:
-  df["WEIGHT_COL"]=1
+def get_banded_cont_feat(df, col, contTargetPts=9, contEdge=0.05, defaultValue=1, weightCol=None, cont=None):
+ 
+ if cont==None:
+  
+  if weightCol==None:
+   df["WEIGHT_COL"]=1
+  else:
+   df["WEIGHT_COL"] = df[weightCol]
+  
+  df = df[~df[cont].isna()]
+  
+  sw = sum(df["WEIGHT_COL"])
+  
+  inpts = []
+  for i in range(contTargetPts):
+   inpts.append(contEdge+(1-contEdge*2)*i/(contTargetPts-1))
+  
+  df = df.sort_values(by=cont).reset_index()
+  df["CSWC"]=df["WEIGHT_COL"].cumsum()
+  
+  pts=[]
+  feat={"uniques":{},"OTHER":defaultValue}
+  
+  for inpt in inpts:
+   newpt = min(df[df["CSWC"]>=(inpt*sw)][cont])
+   if newpt not in pts:
+    pts.append(newpt)
+  
  else:
-  df["WEIGHT_COL"] = df[weightCol]
- 
- df = df[~df[cont].isna()]
- 
- sw = sum(df["WEIGHT_COL"])
- 
- inpts = []
- for i in range(contTargetPts):
-  inpts.append(contEdge+(1-contEdge*2)*i/(contTargetPts-1))
- 
- df = df.sort_values(by=cont).reset_index()
- df["CSWC"]=df["WEIGHT_COL"].cumsum()
- 
- pts=[]
- feat={"uniques":{},"OTHER":defaultValue}
- 
- for inpt in inpts:
-  newpt = min(df[df["CSWC"]>=(inpt*sw)][cont])
-  if newpt not in pts:
-   pts.append(newpt)
- 
+  pts = [c[0] for c in cont]
+   
  feat["uniques"]["< "+str(pts[0])]=defaultValue
  for i in range(len(pts)-1):
   feat["uniques"][str(pts[i])+" to "+str(pts[i+1])]=defaultValue
@@ -245,7 +251,7 @@ def band_df(df, model):
     bandedDf.loc[(df[col]>=pts[i])&(df[col]<pts[i+1]),col] = str(pts[i])+" to "+str(pts[i+1])
    bandedDf.loc[df[col]>=pts[-1],col] = ">= "+str(pts[-1])
  
- return bandedDf
+ return bandedDf.copy()
 
 if __name__ == '__main__':
  df = pd.DataFrame({"cat1":['a','a','a','b','b','b','q','q','q','q','q'],'cont1':[1,2,3,1,2,3,1,2,3,1.5,np.nan],"y":[1,2,3,4,5,6,7,8,9,10,11]})
