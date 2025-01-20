@@ -202,7 +202,7 @@ def comb_from_effects_mult(base,l,contEffs,catEffs,interxEffs=None):
    op = op*interxEffs[cols]
  return op
 
-def get_effect_of_this_cont_on_single_input(x, cont):
+def get_effect_of_this_cont_on_single_input(x, cont, defaultValue=1.0):
  if x<=cont[0][0]:
   return cont[0][1] #everything outside our scope is flat
  for i in range(len(cont)-1):
@@ -210,11 +210,11 @@ def get_effect_of_this_cont_on_single_input(x, cont):
    return ((x-cont[i][0])*cont[i+1][1] + (cont[i+1][0]-x)*cont[i][1])/(cont[i+1][0]-cont[i][0]) #((x-p1)y1 + (p2-x)y2) / (p2 - p1)
  if x>=cont[-1][0]:
   return cont[-1][1] #everything outside our scope is flat
- return "idk lol"
+ return defaultValue
 
-def get_effect_of_this_cont_col(ser, cont):
+def get_effect_of_this_cont_col(ser, cont, defaultValue=1.0):
  x = ser
- effectOfCol = pd.Series([1.0]*len(ser))
+ effectOfCol = pd.Series([defaultValue]*len(ser))
  effectOfCol.loc[(x<=cont[0][0])] = cont[0][1] #Everything too early gets with the program
  for i in range(len(cont)-1):
   x1 = cont[i][0]
@@ -253,16 +253,16 @@ def get_effect_of_this_catcat(ser1, ser2, catcat):
   effectOfCol[(~ser1.isin(catcat['uniques'])) & (ser2==unique2)] = catcat['OTHER']['uniques'][unique2]
  return effectOfCol
 
-def get_effect_of_this_catcont_on_single_input(x1, x2, catcont):
+def get_effect_of_this_catcont_on_single_input(x1, x2, catcont, defaultValue=1.0):
  for unique in catcont["uniques"]:
   if x1==unique:
-   return get_effect_of_this_cont_on_single_input(x2, catcont["uniques"][unique])
- return get_effect_of_this_cont_on_single_input(x2, catcont["OTHER"])
+   return get_effect_of_this_cont_on_single_input(x2, catcont["uniques"][unique], defaultValue)
+ return get_effect_of_this_cont_on_single_input(x2, catcont["OTHER"], defaultValue)
 
-def get_effect_of_this_catcont(ser1, ser2, catcont):
+def get_effect_of_this_catcont(ser1, ser2, catcont, defaultValue=1.0):
  
  x = ser2
- effectOfCol = pd.Series([1.0]*len(ser1))
+ effectOfCol = pd.Series([defaultValue]*len(ser1))
  
  for unique in catcont['uniques']:
   effectOfCol.loc[(ser1==unique) & (x<=catcont['uniques'][unique][0][0])] = catcont['uniques'][unique][0][1] #Everything too early gets with the program
@@ -293,11 +293,11 @@ def get_effect_of_this_contcont_on_single_input(x1,x2, contcont):
 
 
 
-def get_effect_of_this_contcont(ser1, ser2, contcont): #we are using x and y to predict z
+def get_effect_of_this_contcont(ser1, ser2, contcont, defaultValue=1.0): #we are using x and y to predict z
  
  x = ser1
  y = ser2
- effectOfCol = pd.Series([1.0]*len(ser1))
+ effectOfCol = pd.Series([defaultValue]*len(ser1))
  
  #Corners get with the program
  
@@ -393,7 +393,7 @@ def predict_addl(inputDf, model):
  preds = pd.Series([model["BASE_VALUE"]]*len(inputDf))
  if "conts" in model:
   for col in model["conts"]:
-   effectOfCol = get_effect_of_this_cont_col(inputDf[col], model['conts'][col])
+   effectOfCol = get_effect_of_this_cont_col(inputDf[col], model['conts'][col], defaultValue=0)
    preds = preds+effectOfCol
  if "cats" in model:
   for col in model["cats"]:
@@ -407,12 +407,12 @@ def predict_addl(inputDf, model):
  if "catconts" in model:
   for cols in model["catconts"]:
    col1, col2 = cols.split(' X ')
-   effectOfCol = get_effect_of_this_catcont(inputDf[col1], inputDf[col2], model['catconts'][cols])
+   effectOfCol = get_effect_of_this_catcont(inputDf[col1], inputDf[col2], model['catconts'][cols], defaultValue=0)
    preds = preds+effectOfCol
  if "contconts" in model:
   for cols in model["contconts"]:
    col1, col2 = cols.split(' X ')
-   effectOfCol = get_effect_of_this_contcont(inputDf[col1], inputDf[col2], model['contconts'][cols])
+   effectOfCol = get_effect_of_this_contcont(inputDf[col1], inputDf[col2], model['contconts'][cols], defaultValue=0)
    preds = preds+effectOfCol
  if "flink" in model:
   effectOfFlink = get_effect_of_this_cont_col(preds, model["flink"])
