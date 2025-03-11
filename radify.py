@@ -1,7 +1,7 @@
 import util
 
 def radify_cat(cat, col):
- op = "IF ISNAN(" + str(col) + ") THEN " + str(cat["OTHER"]) + " ELSE IF ISEMPTY(" + str(col) + ") THEN " + str(cat["OTHER"]) + " ELSE "
+ op = "IF ISEMPTY(" + str(col) + ") THEN " + str(cat["OTHER"]) + " ELSE "
  for u in cat["uniques"]:
   if type(u)==str:
    op += ("IF " + col + '="' + u + '" THEN ' +  str(cat["uniques"][u]) + " ELSE ")
@@ -11,7 +11,7 @@ def radify_cat(cat, col):
  return op
 
 def radify_cont(cont, col, defaultValue=1):
- op = "IF ISNAN(" + str(col) + ") THEN " + str(defaultValue) + " ELSE IF ISEMPTY(" + str(col) + ") THEN " + str(defaultValue) + " ELSE "
+ op = "IF ISEMPTY(" + str(col) + ") THEN " + str(defaultValue) + " ELSE IF ISNAN(" + str(col) + ") THEN " + str(defaultValue) + " ELSE "
  op += ("IF " + col + "<=" + str(cont[0][0]) + " THEN " + str(cont[0][1]) + " ELSE ")
  for i in range(len(cont)-1):
   p1 = str(cont[i][0])
@@ -26,7 +26,7 @@ def radify_catcat(model, cols):
  col1, col2 = cols.split(" X ")
  catcat=model["catcats"][cols]
  
- op = "IF ISNAN(" + str(col1) + ") THEN (" + radify_cat(catcat["OTHER"], col2) + ") ELSE IF ISEMPTY(" + str(col1) + ") THEN " + radify_cat(catcat["OTHER"], col2) + " ELSE "
+ op = "IF ISEMPTY(" + str(col1) + ") THEN (" + radify_cat(catcat["OTHER"], col2) + ") ELSE IF ISNAN(" + str(col1) + ") THEN " + radify_cat(catcat["OTHER"], col2) + " ELSE "
  for u in catcat["uniques"]:
   op += (" IF " + str(col1) + "= " + str(u) + " THEN (")
   op += radify_cat(catcat["uniques"][u], col2)
@@ -38,7 +38,7 @@ def radify_catcont(model, cols, defaultValue=1):
  col1, col2 = cols.split(" X ")
  catcont=model["catconts"][cols]
  
- op = "IF ISNAN(" + str(col1) + ") THEN (" + radify_cont(catcont["OTHER"], col2, defaultValue) + ") ELSE IF ISEMPTY(" + str(col1) + ") THEN " + radify_cont(catcont["OTHER"], col2, defaultValue) + " ELSE "
+ op = "IF ISEMPTY(" + str(col1) + ") THEN (" + radify_cont(catcont["OTHER"], col2, defaultValue) + ") ELSE IF ISNAN(" + str(col1) + ") THEN " + radify_cont(catcont["OTHER"], col2, defaultValue) + " ELSE "
  for u in catcont["uniques"]:
   op += (" IF " + str(col1) + "= " + str(u) + " THEN (")
   op += radify_cont(catcont["uniques"][u], col2, defaultValue)
@@ -53,15 +53,15 @@ def radify_contcont(model, cols, defaultValue=1):
  col1, col2 = cols.split(" X ")
  contcont=model["contconts"][cols]
  
- op = ("IF ISNAN(" + str(col1) + ") THEN " + str(defaultValue) + " ELSE IF ISEMPTY(" + str(col1) + ") THEN " + str(defaultValue) + " ELSE ")
- op += ("IF ISNAN(" + str(col2) + ") THEN " + str(defaultValue) + " ELSE IF ISEMPTY(" + str(col2) + ") THEN " + str(defaultValue) + " ELSE ")
+ op = ("IF ISEMPTY(" + str(col1) + ") THEN " + str(defaultValue) + " ELSE IF ISNAN(" + str(col1) + ") THEN " + str(defaultValue) + " ELSE ")
+ op += ("IF ISEMPTY(" + str(col2) + ") THEN " + str(defaultValue) + " ELSE IF ISNAN(" + str(col2) + ") THEN " + str(defaultValue) + " ELSE ")
  
  #CORNERS
  
  op += ("IF " + str(col1) + "<=" + str(contcont[0][0]) + " AND " + str(col2) + "<=" + str(contcont[0][1][0][0]) + " THEN " + str(contcont[0][1][0][1]) + " ELSE ")
  op += ("IF " + str(col1) + ">=" + str(contcont[-1][0]) + " AND " + str(col2) + "<=" + str(contcont[-1][1][0][0]) + " THEN " + str(contcont[-1][1][0][1]) + " ELSE ")
  op += ("IF " + str(col1) + "<=" + str(contcont[0][0]) + " AND " + str(col2) + "<=" + str(contcont[0][1][-1][0]) + " THEN " + str(contcont[0][1][-1][1]) + " ELSE ")
- op += ("IF " + str(col1) + "<=" + str(contcont[-1][-1]) + " AND " + str(col2) + "<=" + str(contcont[-1][1][-1][0]) + " THEN " + str(contcont[-1][1][-1][1]) + " ELSE ")
+ op += ("IF " + str(col1) + "<=" + str(contcont[-1][0]) + " AND " + str(col2) + "<=" + str(contcont[-1][1][-1][0]) + " THEN " + str(contcont[-1][1][-1][1]) + " ELSE ")
  
  #EDGES
  
@@ -150,6 +150,7 @@ def radify_model(model, filename="rad_model.txt", logistic=False):
    combLine+=(fc+col1+"__X__"+col2)
  
  if "contconts" in model:
+  print("WARNING: radification of cont-cont interactions is untested at time of writing; caveat!")
   for cols in model["contconts"]:
    col1, col2 = cols.split(" X ")
    lines.append(col1+"__X__"+col2+"___RELA = "+radify_contcont(model, cols, defaultValue)+";")
@@ -169,10 +170,9 @@ def radify_model(model, filename="rad_model.txt", logistic=False):
  
  f = open(filename, "w")
  for line in lines:
-  #print(line)
+  print(line)
   f.write(line+'\n')
  f.close()
-
 
 if __name__ == '__main__':
  exampleModel = {"BASE_VALUE":1700,"conts":{"cont1":[[0.01, 1],[0.02,1.1], [0.03, 1.06]], "cont2":[[37,1.2],[98, 0.9]], "cont3":[[12,1.2],[13, 0.9],[14, 1.1]]}, "cats":{"cat1":{"uniques":{"wstfgl":1.05, "florpalorp":0.92}, "OTHER":1.01},"cat2":{"uniques":{"ruska":1.1, "roma":0.93, 'rita':0.3}, "OTHER":1.9}}, 'catcats':{'cat1 X cat2':{"uniques":{"wstfgl":{"uniques":{"ruska":1.1, "roma":0.93, 'rita':0.3}, "OTHER":1.9}, "florpalorp":{"uniques":{"ruska":1.1, "roma":0.93, 'rita':0.3}, "OTHER":1.9}}, "OTHER":{"uniques":{"ruska":1.1, "roma":0.93, 'rita':0.3}, "OTHER":1.9}}}, 'catconts':{"cat1 X cont1":{"uniques":{"wstfgl":[[0.01, 1],[0.02,1.1], [0.03, 1.06]], "florpalorp":[[0.01, 1],[0.02,1.1], [0.03, 1.06]]}, "OTHER":[[0.01, 1],[0.02,1.1], [0.03, 1.06]]}}, 'contconts':{'cont1 X cont2':[[0.01, [[37,1.2],[98, 0.9]]],[0.02,[[37,1.2],[98, 0.9]]], [0.03, [[37,1.2],[98, 9000]]]]}}

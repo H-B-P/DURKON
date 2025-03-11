@@ -16,7 +16,6 @@ def get_penalize_nondefault(pen, defaultValue=1, specificPenas={}):
  
  def penalize_nondefault(model):
   
-  print("OMG HAIII!")
   if "cats" in model:
    for cat in model["cats"]:
    

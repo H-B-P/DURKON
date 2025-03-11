@@ -35,8 +35,13 @@ def train_tweedie_model(inputDf, resp, nrounds, lr, model, pTweedie=1.5, weightC
  model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, lossgrad=Tweedie_grad, imposns=imposns, momentum=momentum, prints=prints)
  return model
 
+#
 
-
+def train_gzg_gamma_model(inputDf, resp, nrounds, lr, model, weightCol=None, staticFeats=[], momentum=0, imposns=[], prints="normal", lb=None, ub=None):
+ df = inputDf.reset_index(drop=True)
+ gobj = calculus.get_gzg_grad(calculus.Gamma_grad, lb, ub)
+ model = actual_modelling.train_model(df, resp, nrounds, lr, model, weightCol, staticFeats, lossgrad=gobj, imposns=imposns, momentum=momentum, prints=prints)
+ return model
 
 
 def interxhunt_gamma_model(inputDf, resp, cats, conts, model, silent=False, weightCol=None, filename="suggestions"):
@@ -207,6 +212,7 @@ def interxhunt_tweedie_model(inputDf, resp, cats, conts, model, pTweedie=1.5, si
  sugDf = sugDf.sort_values(['Importance'], ascending=False).reset_index()
  sugDf.to_csv(filename+".csv")
 
+#JPAB, currently Poisson-only, to be upd8ed as needed
 
 def jpab_pared_poisson_model(inputDf, resp, nrounds, lr, model, weightCol=None, staticFeats=[], momentum=0, imposns=[], prints="normal", pen=0.1, pencc=0, pe=0.02):
  if pencc>0:
@@ -246,14 +252,18 @@ def jpab_interacted_poisson_model(inputDf, resp, nrounds, lr, model, weightCol=N
  
  return model
 
-def jpab_parallelized_poisson_models(inputDf, resp, nrounds, lr, models, weightCol=None, staticFeats=[], momentum=0, imposnLists=[[]], prints="normal"):
+def jpab_parallelized_poisson_models(inputDf, resp, nrounds, lr, models, weightCol=None, staticFeats=[], momentum=0, imposnLists=[[]], prints="normal", surfrac=0.1):
  df = inputDf.reset_index(drop=True)
  for i in range(len(models)):
-  lrs = [lr]*(i+1) + [0]*(len(models)-(i+1))
-  models = actual_modelling.train_models([df], resp, nrounds, lrs, models, weightCol, staticFeats, lras=calculus.addsmoothing_LRAs, lossgrads=[[calculus.Poisson_grad]], links=[calculus.Add_mlink], linkgrads=[[calculus.Add_mlink_grad]*len(models)], imposnLists=imposnLists, momentum=momentum, prints=prints)
+  lrs = [0]*len(models)
+  lrs[i] = lr
+  models = actual_modelling.train_models([df], resp, round(nrounds*surfrac), lrs, models, weightCol, staticFeats, lras=calculus.addsmoothing_LRAs, lossgrads=[[calculus.Poisson_grad]], links=[calculus.Add_mlink], linkgrads=[[calculus.Add_mlink_grad]*len(models)], imposnLists=imposnLists, momentum=momentum, prints=prints)
+ 
+ lrs = [lr]*len(models)
+ models = actual_modelling.train_models([df], resp, nrounds - len(models)*round(nrounds*surfrac), lrs, models, weightCol, staticFeats, lras=calculus.addsmoothing_LRAs, lossgrads=[[calculus.Poisson_grad]], links=[calculus.Add_mlink], linkgrads=[[calculus.Add_mlink_grad]*len(models)], imposnLists=imposnLists, momentum=momentum, prints=prints)
  return models
  
-   
+#We now return to your regularly scheduled walls of code
 
 def prep_models(inputDf, resp, cats, conts, N=1, fractions=None, catMinPrev=0.01, contTargetPts=5, contEdge=0.01, weightCol=None):
  df = inputDf.reset_index(drop=True)

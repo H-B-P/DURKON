@@ -9,7 +9,9 @@ import wraps
 import viz
 import impose
 import radify
-import dodel
+
+
+#
 
 #Weighted Poisson proof of concept
 
@@ -23,11 +25,11 @@ print(model)
 model = wraps.train_poisson_model(df, 'y', 50, 0.1, model, weightCol="exposure")
 print(model)
 
-#JPAB proof of concept (still for weighted Poisson)
+#JPAB proof of concept (still for weighted Poisson; still only for weighted Poisson)
 
 model = wraps.prep_model(df, "y", cats, conts)
 print(model)
-model = wraps.jpab_interacted_poisson_model(df, 'y',50,0.1, model, weightCol="exposure", N=2, prints="verbose")
+model = wraps.jpab_interacted_poisson_model(df, 'y',50,0.03, model, weightCol="exposure", N=2)
 print(model)
 
 models = wraps.prep_models(df,"y",cats,conts,N=2)
@@ -388,5 +390,30 @@ wraps.viz_additive_model(model, "flink")
 #Flink also works for multiples, in both senses of the word!
 
 #---
+
+#GZG proof of concept
+
+df = pd.DataFrame({"cont1":[1,2,3,1,2,3,1,2,3,4],"cont2":[1,2,3,4,5,1,2,3,4,5], "cont3":[4,3,2,1,4,3,2,1,4,3], "cont4":[2,3,4,5,6,7,1,2,3,4]})
+df["y"] = df["cont1"]*df["cont2"]*df["cont3"]*df["cont4"]
+df["y"] = df['y'].clip(lower=20)
+
+cats = []
+conts = ["cont1", "cont2","cont3","cont4"]
+
+model = wraps.prep_model(df, "y", cats, conts)
+model["conts"]["cont1"]=[[1,1],[4,1]] #These four lines are just to reduce degrees of freedom btw
+model["conts"]["cont2"]=[[1,1],[5,1]]
+model["conts"]["cont3"]=[[1,1],[4,1]]
+model["conts"]["cont4"]=[[1,1],[7,1]]
+
+#model = wraps.train_gamma_model(df, 'y', 500, 0.1, model)
+model = wraps.train_gzg_gamma_model(df, 'y', 500, 0.1, model,lb=20)
+
+print(model)
+
+#Note: The entire point of this trick is reassuring the model that you'll apply appropriate censorship to its predictions post hoc; so if you're using it remember to actually do that!
+
+#---
+
 
 #(I put the banding demo in do_everything_cake.py)
