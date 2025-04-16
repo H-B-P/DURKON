@@ -193,6 +193,8 @@ def add_catcat_to_model(model, df, cat1, cat2, catMinPrev1=0.1, catMinPrev2=0.1,
 
 def get_banded_cont_feat(df, col, contTargetPts=9, contEdge=0.05, defaultValue=1, weightCol=None, cont=None):
  
+ feat={"uniques":{},"OTHER":defaultValue}
+ 
  if cont==None:
   
   if weightCol==None:
@@ -212,7 +214,6 @@ def get_banded_cont_feat(df, col, contTargetPts=9, contEdge=0.05, defaultValue=1
   df["CSWC"]=df["WEIGHT_COL"].cumsum()
   
   pts=[]
-  feat={"uniques":{},"OTHER":defaultValue}
   
   for inpt in inpts:
    newpt = min(df[df["CSWC"]>=(inpt*sw)][col])
