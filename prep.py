@@ -200,7 +200,7 @@ def get_banded_cont_feat(df, col, contTargetPts=9, contEdge=0.05, defaultValue=1
   else:
    df["WEIGHT_COL"] = df[weightCol]
   
-  df = df[~df[cont].isna()]
+  df = df[~df[col].isna()]
   
   sw = sum(df["WEIGHT_COL"])
   
@@ -208,14 +208,14 @@ def get_banded_cont_feat(df, col, contTargetPts=9, contEdge=0.05, defaultValue=1
   for i in range(contTargetPts):
    inpts.append(contEdge+(1-contEdge*2)*i/(contTargetPts-1))
   
-  df = df.sort_values(by=cont).reset_index()
+  df = df.sort_values(by=col).reset_index()
   df["CSWC"]=df["WEIGHT_COL"].cumsum()
   
   pts=[]
   feat={"uniques":{},"OTHER":defaultValue}
   
   for inpt in inpts:
-   newpt = min(df[df["CSWC"]>=(inpt*sw)][cont])
+   newpt = min(df[df["CSWC"]>=(inpt*sw)][col])
    if newpt not in pts:
     pts.append(newpt)
   
@@ -229,15 +229,15 @@ def get_banded_cont_feat(df, col, contTargetPts=9, contEdge=0.05, defaultValue=1
  
  return feat, pts
 
-def add_banded_cont_to_model(model, df, cont, contTargetPts=9, contEdge=0.1, defaultValue=1, weightCol=None):
+def add_banded_cont_to_model(model, df, col, contTargetPts=9, contEdge=0.1, defaultValue=1, weightCol=None, cont=None):
  
  if "cats" not in model:
   model["cats"] = {}
  if "bandings" not in model:
   model["bandings"] = {}
- c,b = get_banded_cont_feat(df,cont, contTargetPts, contEdge, defaultValue, weightCol)
- model["cats"][cont]=c
- model["bandings"][cont]=b
+ c,b = get_banded_cont_feat(df,col, contTargetPts, contEdge, defaultValue, weightCol, cont)
+ model["cats"][col]=c
+ model["bandings"][col]=b
  return model
 
 def band_df(df, model):
