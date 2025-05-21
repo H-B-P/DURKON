@@ -247,6 +247,7 @@ def band_df(df, model):
  if "bandings" in model:
   for col in model["bandings"]:
    pts = model["bandings"][col]
+   bandedDf[col] = ""
    bandedDf.loc[df[col]<pts[0],col] = "< "+str(pts[0])
    for i in range(len(model["bandings"][col])-1):
     bandedDf.loc[(df[col]>=pts[i])&(df[col]<pts[i+1]),col] = str(pts[i])+" to "+str(pts[i+1])

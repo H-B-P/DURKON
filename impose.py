@@ -105,7 +105,7 @@ def penalize_cont_complexity(cont, pen):
   for i in range(len(cont)):
    cont[i][1] = move_to_target(cont[i][1], pen, targets[i])
   
-  return cont
+ return cont
 
 def get_penalize_conts_complexity(pen):
  def penalize_conts_complexity(model):
@@ -113,6 +113,24 @@ def get_penalize_conts_complexity(pen):
    model["conts"][c] = penalize_cont_complexity(model["conts"][c], pen)
   return model
  return penalize_conts_complexity
+
+def penalize_cat_complexity(cat, pen): #May God forgive me for this one
+ 
+ uniques = [u for u in cat["uniques"]]
+ fakeCont = [[i, cat["uniques"][uniques[i]]] for i in range(len(uniques))]
+ fakeCont = penalize_cont_complexity(fakeCont, pen)
+ 
+ for i in range(len(uniques)):
+  cat["uniques"][uniques[i]] = fakeCont[i][1]
+ 
+ return cat
+
+def get_penalize_cats_complexity(pen):
+ def penalize_cats_complexity(model):
+  for c in model["cats"]:
+   model["cats"][c] = penalize_cat_complexity(model["cats"][c], pen)
+  return model
+ return penalize_cats_complexity
 
 #Looping conts
 

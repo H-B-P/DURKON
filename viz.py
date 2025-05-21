@@ -70,9 +70,9 @@ def draw_cont_pdp(pts, targetSpan=0, name="graph", model=0, defaultValue=1, leew
  
  if name!="graph":
   if (model==0):
-   fig.update_layout(title="PDP for "+name, xaxis_title=name, yaxis_title=ytitle)
+   fig.update_layout(title="Relativities for "+name, xaxis_title=name, yaxis_title=ytitle)
   else:
-   fig.update_layout(title="PDP for "+name+", model "+model, xaxis_title=name, yaxis_title=ytitle)
+   fig.update_layout(title="Relativities for "+name+", model "+model, xaxis_title=name, yaxis_title=ytitle)
  
  if (model==0):
   if timg:
@@ -110,9 +110,9 @@ def draw_cat_pdp(dyct, targetSpan=0, name="graph", model=0, defaultValue=1, leew
  
  if name!="graph":
   if (model==0):
-   fig.update_layout(title="PDP for "+name, xaxis_title=name, yaxis_title=ytitle)
+   fig.update_layout(title="Relativities for "+name, xaxis_title=name, yaxis_title=ytitle)
   else:
-   fig.update_layout(title="PDP for "+name+", model "+model, xaxis_title=name, yaxis_title=ytitle)
+   fig.update_layout(title="Relativities for "+name+", model "+model, xaxis_title=name, yaxis_title=ytitle)
  
  if (model==0):
   if timg:
@@ -173,9 +173,9 @@ def draw_catcat_pdp(catcat, targetSpan=0, name="graph", model=0, defaultValue=1,
  
  if name!="graph":
   if (model==0):
-   fig.update_layout(title="PDP for "+name, xaxis_title=cat2, yaxis_title=ytitle)
+   fig.update_layout(title="Relativities for "+name, xaxis_title=cat2, yaxis_title=ytitle)
   else:
-   fig.update_layout(title="PDP for "+name+", model "+model, xaxis_title=cat2, yaxis_title=ytitle)
+   fig.update_layout(title="Relativities for "+name+", model "+model, xaxis_title=cat2, yaxis_title=ytitle)
  
  if (model==0):
   if timg:
@@ -222,9 +222,9 @@ def draw_catcont_pdp(catcont, targetSpan=0, name="graph", model=0, defaultValue=
  
  if name!="graph":
   if (model==0):
-   fig.update_layout(title="PDP for "+name, yaxis_title=ytitle)
+   fig.update_layout(title="Relativities for "+name, yaxis_title=ytitle)
   else:
-   fig.update_layout(title="PDP for "+name+", model "+model, yaxis_title=ytitle)
+   fig.update_layout(title="Relativities for "+name+", model "+model, yaxis_title=ytitle)
  
  if (model==0):
   if timg:
@@ -263,9 +263,9 @@ def draw_contcont_pdp(contcont, targetSpan=0, name="graph", model=0, defaultValu
  
  if name!="graph":
   if (model==0):
-   fig.update_layout(title="PDP for "+name, xaxis_title=cont2, yaxis_title=ytitle)
+   fig.update_layout(title="Relativities for "+name, xaxis_title=cont2, yaxis_title=ytitle)
   else:
-   fig.update_layout(title="PDP for "+name+", model "+model, xaxis_title=cont2, yaxis_title=ytitle)
+   fig.update_layout(title="Relativities for "+name+", model "+model, xaxis_title=cont2, yaxis_title=ytitle)
  
  if (model==0):
   if timg:
@@ -301,9 +301,9 @@ def draw_contcont_pdp_3D(contcont, targetSpan=0, name="graph", model=0, defaultV
  
  if name!="graph":
   if (model==0):
-   fig.update_layout(title="PDP for "+name)
+   fig.update_layout(title="Relativities for "+name)
   else:
-   fig.update_layout(title="PDP for "+name+", model "+model)
+   fig.update_layout(title="Relativities for "+name+", model "+model)
  
  if (model==0):
   plotly.offline.plot(fig, filename=folder+"/"+name+'.html', auto_open = False)
@@ -344,9 +344,9 @@ def draw_contcont_pdp_heatmap(contcont, targetSpan=0, name="graph", model=0, def
  
  if name!="graph":
   if (model==0):
-   fig.update_layout(title="PDP for "+name)
+   fig.update_layout(title="Relativities for "+name)
   else:
-   fig.update_layout(title="PDP for "+name+", model "+model)
+   fig.update_layout(title="Relativities for "+name+", model "+model)
  
  if (model==0):
   plotly.offline.plot(fig, filename=folder+"/"+name+'.html', auto_open = False)
